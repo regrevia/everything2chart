@@ -41,10 +41,19 @@ def _staff_path(pkl: Path) -> Path:
     silently check the wrong file -- the exact false pass this tool exists to
     prevent.  So take the newest, and always print which one was used.
     """
+    # The pickle and the staff file of one run share their stem, so an
+    # explicit pairing beats a timestamp: ``--preset all`` writes three
+    # pickles and three staff files a second apart, and the newest one is
+    # whichever tier happened to finish last, not this one.
     beside = sorted(pkl.parent.glob("*.musicxml"))
     if not beside:
         raise SystemExit(f"no .musicxml beside {pkl}")
-    return max(beside, key=lambda c: c.stat().st_mtime)
+    own = pkl.name.split(".arr.")[0]
+    same = [c for c in beside if c.name.split(".musicxml")[0] == own]
+    if len(same) == 1:
+        return same[0]
+    candidates = same or beside
+    return max(candidates, key=lambda c: c.stat().st_mtime)
 
 
 def main() -> int:

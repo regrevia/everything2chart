@@ -1271,8 +1271,16 @@ def build_arrangement(
     shift, notated_key = transpose_plan(
         key, preset["global"].get("allowed_black_keys", 12),
         preset["global"].get("target_key"))
-    transpose = transpose + shift
-    pcs = scale_pcs(notated_key)
+    # The tiers may differ in exactly one thing: this semitone count.  So the
+    # arrangement is built in the source key, where no stage can see which key
+    # it will be printed in, and shifted once at the very end.  Building in the
+    # notated key instead let the key leak into the result: the left-hand
+    # snap and the chord tones were computed from the notated key's scale, so
+    # the same source note could be snapped a semitone and could create or
+    # destroy a unison, and the three tiers ended up with different notes.
+    shift = transpose + shift
+    pcs = scale_pcs(key)
+    transpose = 0
 
     kept = [n for n in melody if n.dur >= rh_cfg["min_note"]]
     folded = fold_line([n.pitch + transpose for n in kept], lo_rh, hi_rh)
@@ -1293,8 +1301,8 @@ def build_arrangement(
     rh_spill += spill2
     rh.sort(key=lambda n: n.start)
     rh_min = min((n.pitch for n in rh), default=hi_rh)
-    lh = _build_left_hand(harmony, preset, info, rh_min, pcs=pcs, transpose=shift,
-                          bass=bass)
+    lh = _build_left_hand(harmony, preset, info, rh_min, pcs=pcs,
+                          transpose=transpose, bass=bass)
     if rh_spill:
         folded = [_fold_into(lh, n, preset["left_hand"]["range"], spq) for n in rh_spill]
         lh = lh + [f for f in folded if f is not None]
@@ -1363,10 +1371,19 @@ def build_arrangement(
 
     lh, capped = _cap_strikes(lh, hand_cap, root_at=_root_at)
 
+    # One shift, applied to finished pitches: the tiers cannot differ by more.
+    if shift:
+        rh = [NoteEvent(pitch=n.pitch + shift, start=n.start, dur=n.dur,
+                        velocity=n.velocity, stem=n.stem, confidence=n.confidence)
+              for n in rh]
+        lh = [NoteEvent(pitch=n.pitch + shift, start=n.start, dur=n.dur,
+                        velocity=n.velocity, stem=n.stem, confidence=n.confidence)
+              for n in lh]
+
     accidental_pc = len(scale_pcs(notated_key) & {1, 3, 6, 8, 10})
     return Arrangement(
         right=rh, left=lh, info=info, preset=preset_name, key_signature=notated_key,
-        meta={"transpose": transpose, "source_key": key,
+        meta={"transpose": shift, "source_key": key,
               "accidental_pitch_classes": accidental_pc,
               "preset_label": preset.get("label", preset_name),
               "capped_strikes": capped,
