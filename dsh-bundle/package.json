@@ -1,6 +1,6 @@
 {
   "name": "pianochart-dsh",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Turn one audio link into a piano score: five-line staff, numbered notation, MusicXML and MIDI, written to be playable.",
   "type": "module",
   "license": "MIT",

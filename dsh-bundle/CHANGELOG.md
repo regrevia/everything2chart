@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.7
+
+- The three tiers are now the same notes, which is what the docs have been
+  promising. The arrangement was being written in the tier's own notated key,
+  so snapping the left hand to that key's scale could absorb one source note
+  up, down, or not at all, and how many notes the tier had followed from
+  that: on one separation pass the three scores differed by 19-23 notes each
+  way once each tier's transpose was removed. The arrangement is now built in
+  the source key and shifted once at the end, so `easy`, `medium` and `hard`
+  are the same 2187 pitches in 690 right-hand and 1497 left-hand notes, and
+  only the key signature differs.
+- The fingering check in the repository pairs its staff file by name.
+  `--preset all` writes three staff files a second apart, so picking the
+  newest attached `easy` and `medium` to the `hard` score and reported a
+  disagreement that was not there.
+
 ## 0.1.6
 
 - The result says whether the numbers actually reached the score. `fingering`
