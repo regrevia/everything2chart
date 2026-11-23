@@ -56,6 +56,8 @@ PYTHONPATH=src .venv/bin/python scripts/note_f1.py bench/clip1.truth.json out/cl
 
 三档同构性用 `sorted((round(start,4), pitch - meta["transpose"]))` 逐手比对，六个 arm 全部相等。
 
+同构靠的是「在源调构建、最后一次移调」：`pcs = scale_pcs(source_key)` 在前，`shift` 在最后，所以三档吸附用的是同一套音级，档位只能平移，不能增删音符。副作用是**音符不一定都落在印刷的调号内**——`clip1` 三档各有 3 个音留在印刷调外，它们其实是源调的同一对音级 `D♯` 和 `F♮`（G 大调的 `♯4` 与 `♭7`），只是跟着移调换了拼法：easy 印作 `D♯`/`F`，medium 印作 `G♯`/`A♯`，hard 印作 `A♯`/`C`。以 easy 为基准正好差 `+5` 与 `-5` 个半音（medium = easy +5、hard = easy −5），位置逐位一致。这是故意的：让吸附跟着印刷调走，等于让调号泄进编配，档位就会真的不一样了。`clip2` 因为源调就是 `C`，三档 0 个。
+
 `report.json` 现在把两个量分开报：`key_signature_accidentals` 是**调号**里落在黑键上的音级数（`G` 大调 → `F#`，所以是 1），`black_key_notes` 是**音符**里落在黑键上的个数（`clip1` 三档 `2 / 3 / 6`，与直接数 pickle 逐位相同）。旧字段名 `accidental_pitch_classes` 一个名字兼指两者，档位顺序就是被它带反的，现在保留只为兼容，新代码请读 `black_key_notes`。
 
 ## 演进
