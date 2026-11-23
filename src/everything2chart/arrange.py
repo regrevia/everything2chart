@@ -1272,6 +1272,34 @@ def build_arrangement(
     if preset_name not in presets:
         raise KeyError(f"unknown preset {preset_name!r}, have {list(presets)}")
     preset = presets[preset_name]
+    # Every bar line, slot and density budget below is counted from beat 0, so
+    # beat 0 has to be at t=0.  A take that starts 90 ms late, or with a
+    # pickup, otherwise puts the whole piece off the bar grid and the last bar
+    # comes out one beat short or one beat long.  Rebase the input on the beat
+    # origin and put it back on the output, so a duration is unchanged and the
+    # reference audio stays addressable at the times the bars name.
+    origin = float(getattr(info, "beat_origin", 0.0) or 0.0)
+    if origin:
+        def _shift(notes, delta):
+            return [NoteEvent(pitch=n.pitch, start=n.start + delta, dur=n.dur,
+                              velocity=n.velocity, stem=n.stem,
+                              confidence=n.confidence, finger=n.finger)
+                    for n in notes]
+        melody = _shift(melody, -origin)
+        bass = _shift(bass, -origin)
+        chords = [ChordEvent(start=max(0.0, c.start - origin),
+                             end=max(0.0, c.end - origin), root=c.root,
+                             quality=c.quality, confidence=c.confidence)
+                  for c in chords]
+        if ref_audio:
+            y, sr = ref_audio
+            pad = int(round(origin * sr))
+            if pad > 0:
+                ref_audio = (np.concatenate([np.zeros(pad, dtype=y.dtype), y]), sr)
+        info = SongInfo(path=info.path, duration=info.duration,
+                        bpm=info.bpm,
+                        beats=[b - origin for b in info.beats],
+                        beats_per_bar=info.beats_per_bar, beat_origin=0.0)
     spq = 60.0 / info.bpm if info.bpm else 0.5
     rh_cfg = preset["right_hand"]
     lo_rh, hi_rh = rh_cfg["range"]
@@ -1390,6 +1418,9 @@ def build_arrangement(
                         velocity=n.velocity, stem=n.stem, confidence=n.confidence)
               for n in lh]
 
+    if origin:
+        rh = _shift(rh, origin)
+        lh = _shift(lh, origin)
     accidental_pc = len(scale_pcs(notated_key) & {1, 3, 6, 8, 10})
     return Arrangement(
         right=rh, left=lh, info=info, preset=preset_name, key_signature=notated_key,

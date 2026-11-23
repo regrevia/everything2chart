@@ -185,12 +185,20 @@ def to_music21(arr: Arrangement):
             part.insert(0, k)
         except Exception:
             pass
+        # Same length as the numbered notation, from the same function: an
+        # onset the score has already decided is past the last bar must not be
+        # engraved, or the staff grows a bar the text does not have.
+        limit = _score_beats(arr, arr.info.beats_per_bar, 60.0 / arr.info.bpm)
         by_offset: dict[float, list[NoteEvent]] = {}
         for off, dur, e in _quantised_events(events, arr.info.bpm):
-            by_offset.setdefault(off, []).append(e)
+            if off < limit - 1e-9:
+                by_offset.setdefault(off, []).append(e)
         for off in sorted(by_offset):
             group = by_offset[off]
             dur = max(round(max(e.dur for e in group) / (60.0 / arr.info.bpm) * 8) / 8, 0.125)
+            dur = min(dur, limit - off)
+            if dur <= 1e-9:
+                continue
             _insert_group(part, group, off, dur, float(arr.info.beats_per_bar))
         score.insert(0, part)
     return score
@@ -327,6 +335,37 @@ def _solfa(pitch: int, tonic: int, flat: bool = False) -> str:
     return base
 
 
+def _score_beats(arr: Arrangement, bpb: int, spq: float) -> int:
+    """How many beats of music this arrangement actually has.
+
+    Both renderers ask this one function, because they used to answer it
+    differently and the numbered notation came out one bar shorter than the
+    staff for the same score.
+
+    A bar is as long as its beats, so the count comes from the last sound and
+    not from the file duration: a reverb tail past the final note otherwise
+    rounds up into a bar of its own, which is the "one beat too many" a
+    listener hears at the end.  Within the last sound it is the last ONSET
+    that counts, not the last note end: a final note whose release rings across
+    the bar line does not open a bar of its own.  On the benchmark clip's own
+    ground truth (8 bars of 4/4 at 96 bpm) the end rule gives 9 bars and the
+    onset rule gives the correct 8.
+
+    The final bar then has to earn its place.  A bar of a single beat is a
+    stray onset from the detector's tail, not music; a bar of half a bar or
+    more is a real anacrusis and is kept.  Tempo estimation carries about 1%
+    error, and over a couple of minutes that is more than enough to push the
+    last real onset across a bar line on its own.
+    """
+    last = max((n.start for n in list(arr.right) + list(arr.left)), default=0.0)
+    end = last if last > 0 else arr.info.duration
+    beats = max(1, int(np.ceil(end / spq - 1e-6)))
+    rest = beats % bpb
+    if 0 < rest < bpb / 2.0:
+        beats -= rest
+    return beats
+
+
 def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
                   sub: int = 4) -> str:
     """Plain-text numbered notation (简谱) on a ``sub``-slot-per-beat grid.
@@ -351,7 +390,7 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
         "",
     ]
 
-    total_beats = max(1, int(round(arr.info.duration / spq)))
+    total_beats = _score_beats(arr, bpb, spq)
 
     # A text line per hand can only carry one duration per strike, so "how long"
     # is decided here and the reader (tools/jpround.py) has to agree: a note that

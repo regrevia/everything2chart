@@ -73,6 +73,72 @@ def track_beats(y: np.ndarray, sr: int) -> tuple[float, list[float]]:
     return tempo, [float(b) for b in beats]
 
 
+def _beat_energy(mono: np.ndarray, sr: int, beats: np.ndarray) -> np.ndarray | None:
+    """Onset strength sampled at each beat, so a grid can be scored by accent."""
+    if len(beats) < 2:
+        return None
+    env = librosa.onset.onset_strength(y=mono, sr=sr, hop_length=512)
+    times = librosa.frames_to_time(np.arange(len(env)), sr=sr, hop_length=512)
+    i = np.clip(np.searchsorted(times, beats), 1, len(env) - 2)
+    return np.maximum(np.maximum(env[i - 1], env[i]), env[i + 1])
+
+
+def _accent(energy: np.ndarray, bpb: int) -> float | None:
+    """How much louder the first beat of each bar is than the rest of it.
+
+    In music with a written bar the downbeat is the accented one, so a beat
+    grid folded at the right metre puts the energy peak in column 0.  A grid at
+    the wrong tempo octave, or folded at the wrong metre, spreads that peak
+    over the other columns and the ratio falls to about 1.
+    """
+    n = len(energy) // bpb * bpb
+    if n < 2 * bpb:
+        return None
+    cols = energy[:n].reshape(-1, bpb).mean(axis=0)
+    return float(cols[0] / max(float(cols[1:].mean()), 1e-9))
+
+
+def estimate_metre(y: np.ndarray, sr: int, tempo: float, beats: list[float],
+                   prefer_bpb: int = 4) -> tuple[float, list[float], int, dict]:
+    """Re-pick the tempo octave and the metre from the accent pattern.
+
+    A beat tracker reports one tempo, and the error a listener hears is almost
+    always an octave of it: at half tempo two bars are folded into one and the
+    bar line lands on a weak beat, which sounds like an extra beat or a missing
+    half beat.  Contrast tests cannot settle it -- on real polyphonic audio the
+    ratio between a correct and a half-tempo grid is only about 2.3 -- but the
+    accent of the downbeat can: measured on the benchmark clip, the true tempo
+    scores 1.32 and its half scores 0.64.
+    """
+    mono = librosa.to_mono(y.T) if y.ndim > 1 else y
+    best: tuple[float, float, int, list[float], float] | None = None
+    trials = {}
+    for bpb in (prefer_bpb, 3):
+        for factor in (0.5, 1.0, 2.0):
+            cand = tempo * factor
+            if not 30.0 <= cand <= 240.0:
+                continue
+            found, cand_beats = librosa.beat.beat_track(
+                y=mono, sr=sr, units="time", trim=False, bpm=cand)
+            cand_beats = np.asarray(cand_beats, dtype=float)
+            energy = _beat_energy(mono, sr, cand_beats)
+            if energy is None:
+                continue
+            acc = _accent(energy, bpb)
+            if acc is None:
+                continue
+            trials[f"{cand:.1f}/{bpb}"] = round(acc, 3)
+            score = acc * (1.05 if factor == 1.0 else 1.0) * (1.02 if bpb == prefer_bpb else 1.0)
+            if best is None or score > best[0]:
+                best = (score, float(np.atleast_1d(found)[0]), bpb, cand_beats, acc)
+    if best is None:
+        return tempo, beats, prefer_bpb, {"trials": trials}
+    _, out_tempo, bpb, cand_beats, acc = best
+    if len(cand_beats) < 4:
+        return tempo, beats, prefer_bpb, {"trials": trials}
+    return out_tempo, [float(b) for b in cand_beats], bpb, {"trials": trials, "accent": round(acc, 3)}
+
+
 def pyin_notes(
     y: np.ndarray,
     sr: int,
@@ -198,12 +264,68 @@ def estimate_chords(
     return [c for c in merged if c.end - c.start >= min_dur] or merged
 
 
-def analyse(y: np.ndarray, sr: int) -> SongInfo:
+def _drop_tail_silence(y: np.ndarray, sr: int, beats, silence: float = 0.05):
+    """Drop trailing beats the tracker placed in silence.
+
+    `beat_track` extends its grid to the end of the FILE, not to the end of the
+    music.  A take that rings out for a second past its last bar therefore gets
+    an extra beat sitting in near-zero signal, and every bar line measured from
+    that grid shifts by one beat -- the "extra beat at the end" a listener
+    hears.  On the benchmark clip the final beat sits at RMS 0.0005 while every
+    real beat is above 0.048, so the cut is not a judgement call.
+
+    The threshold is relative to the piece's own RMS median, so a quiet
+    recording is not trimmed away, and it only ever removes a TRAILING run: a
+    real rest inside the music is not touched.
+    """
+    arr = np.asarray(beats, dtype=float)
+    if len(arr) < 4:
+        return beats
+    mono = librosa.to_mono(y.T) if y.ndim > 1 else y
+    hop = 512
+    rms = librosa.feature.rms(y=mono, hop_length=hop)[0]
+    if not len(rms):
+        return beats
+    times = librosa.frames_to_time(np.arange(len(rms)), sr=sr, hop_length=hop)
+    idx = np.searchsorted(times, arr).clip(0, len(rms) - 1)
+    energy = rms[idx]
+    floor = silence * float(np.median(rms))
+    keep = len(arr)
+    while keep > 4 and energy[keep - 1] < floor:
+        keep -= 1
+    return [float(b) for b in arr[:keep]]
+
+
+def analyse(y: np.ndarray, sr: int, metre: bool = True) -> SongInfo:
     bpm, beats = track_beats(y, sr)
+    duration = y.shape[0] / sr
     if not beats:
         step = 60.0 / bpm if bpm else 0.5
-        beats = list(np.arange(0, y.shape[0] / sr, step))
-    return SongInfo(path="", duration=y.shape[0] / sr, bpm=bpm, beats=beats)
+        beats = list(np.arange(0, duration, step))
+        return SongInfo(path="", duration=duration, bpm=bpm, beats=beats)
+    bpb = 4
+    if metre:
+        bpm, beats, bpb, _ = estimate_metre(y, sr, bpm, beats)
+    beats = _drop_tail_silence(y, sr, beats)
+    # `beat_track` reports one tempo for the whole take, but the takes are
+    # human: the fitted interval on a 60-second clip differs from the reported
+    # one by about 8 ms, which is three and a half beats of drift by the end
+    # of the piece.  Every bar line is measured from the tempo, so that drift
+    # shows up as an extra bar or a dropped half beat.  The beats themselves
+    # are the better tempo estimate, so refit.
+    arr = np.asarray(beats, dtype=float)
+    if len(arr) >= 4:
+        span = arr[-1] - arr[0]
+        if span > 0:
+            fitted = span / (len(arr) - 1)
+            reported = 60.0 / bpm if bpm else fitted
+            # Trust the beats unless they disagree badly -- that means the
+            # tracker skipped or doubled beats and the reported tempo is right.
+            if 0.8 * reported <= fitted <= 1.25 * reported:
+                bpm = 60.0 / fitted
+    origin = float(arr[0]) % (60.0 / bpm) if bpm else 0.0
+    return SongInfo(path="", duration=duration, bpm=bpm, beats=[float(b) for b in arr],
+                    beats_per_bar=bpb, beat_origin=origin)
 
 
 # --------------------------------------------------------------------- melody (skyline)

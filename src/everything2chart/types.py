@@ -79,14 +79,16 @@ class SongInfo:
     bpm: float
     beats: list[float] = field(default_factory=list)  # beat onset times, seconds
     beats_per_bar: int = 4
+    # Where beat 0 actually falls.  A recording almost never starts exactly on
+    # the grid, and a beat tracker reports its first beat wherever the onset
+    # was.  Every bar line and quantisation slot is measured from here; using
+    # t=0 instead shifts the whole piece by up to half a beat.
+    beat_origin: float = 0.0
 
     def quantise(self, t: float, grid: float = 0.125) -> float:
         """Snap a time in seconds to a beat-subdivision grid."""
-        if not self.beats:
-            step = 60.0 / self.bpm
-            return round(t / (step * grid)) * step * grid
         step = 60.0 / self.bpm * grid
-        return round(t / step) * step
+        return round((t - self.beat_origin) / step) * step + self.beat_origin
 
 
 @dataclass(slots=True)
