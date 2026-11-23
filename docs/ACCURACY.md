@@ -52,7 +52,9 @@ PYTHONPATH=src .venv/bin/python scripts/note_f1.py bench/clip1.truth.json out/cl
 | `clip2` | medium | Cm / 16 | G / 16 |
 | `clip2` | hard | Fm / 24 | F / 24 |
 
-三档同构性用 `sorted((round(start,4), pitch - meta["transpose"]))` 逐手比对，六个 arm 全部相等；黑键数直接数 `pitch % 12 in {1,3,6,8,10}`，不读 `meta['accidental_pitch_classes']`（该字段不可靠，见「已知短板」）。
+三档同构性用 `sorted((round(start,4), pitch - meta["transpose"]))` 逐手比对，六个 arm 全部相等。
+
+`report.json` 现在把两个量分开报：`key_signature_accidentals` 是**调号**里落在黑键上的音级数（`G` 大调 → `F#`，所以是 1），`black_key_notes` 是**音符**里落在黑键上的个数（`clip1` 三档 `2 / 3 / 6`，与直接数 pickle 逐位相同）。旧字段名 `accidental_pitch_classes` 一个名字兼指两者，档位顺序就是被它带反的，现在保留只为兼容，新代码请读 `black_key_notes`。
 
 ## 演进
 
@@ -92,7 +94,7 @@ PYTHONPATH=src .venv/bin/python scripts/note_f1.py bench/clip1.truth.json out/cl
 ## 已知短板
 
 - **八度错误**。`cqt_melody` 的谐波累加方向反了：`sal[: n_bins - shift] += w * C[shift:]` 把高 bin 的能量加到低 bin，造成系统性低八度偏置。半音差直方图上 `-12` 出现 5 次。pc-F1 明显高于 note-F1 的一部分原因就在这里。
-- **`meta['accidental_pitch_classes']` 不可信**。它并不来自 `allowed_black_keys`（后者是吸附半径，不是上限），所以 `report.json` 里的黑键统计不能拿来判档位；要判就数 `pitch % 12`。
+- **旧字段 `meta['accidental_pitch_classes']` 指的是调号不是音符**（等于 `key_signature_accidentals`），也不来自 `allowed_black_keys`（后者是吸附半径，不是上限）。判档位请读 `black_key_notes`，或直接数 `pitch % 12`。
 - **速度八度已经修好，但不是靠对比度**。旧规则要求倍速网格的对比度好 4 倍，实测最好只有 2.3 倍，所以从未触发；现在改用重音（`clip1` 正确速度 1.32、半速 0.64）。
 - **左手偏弱**。左手 note-F1 0.4952，低于右手 0.6538。左手是折叠出来的，真值里的块状和弦本来就不该被逐音还原，这个数字的含义要弱于右手。
 - **没有 MIDI 渲染器**，所以无法在别人的测试集上算同口径分数。

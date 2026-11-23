@@ -1502,7 +1502,16 @@ def build_arrangement(
     if origin:
         rh = _shift(rh, origin)
         lh = _shift(lh, origin)
-    accidental_pc = len(scale_pcs(notated_key) & {1, 3, 6, 8, 10})
+    # Two different quantities used to share one name here, which is how the
+    # tier order got inverted: `accidental_pitch_classes` is how many pitch
+    # classes of the *key signature* sit on black keys (G major -> F#, so 1).
+    # It says nothing about the notes.  A piece written around a key other than
+    # C turns its accidentals into black keys when notated in C, so the tier
+    # with the cleanest signature -- 0 by this measure -- had 27 and 70 black
+    # keys actually under the hand against 2 and 0 for the tier with one.
+    # The played count is what the tier promises, so it gets its own field.
+    accidental_pc = len(scale_pcs(notated_key) & BLACK_PCS)
+    black_key_notes = sum(1 for n in rh + lh if n.pitch % 12 in BLACK_PCS)
     # Drop the notes that fall outside the score.  Both renderers already clip
     # them -- a note opening after the last bar line cannot be printed -- so
     # they were only ever a phantom: the pickle counted five notes of clip1
@@ -1518,6 +1527,8 @@ def build_arrangement(
         right=rh, left=lh, info=info, preset=preset_name, key_signature=notated_key,
         meta={"transpose": shift, "source_key": key, "score_beats": score_beats,
               "accidental_pitch_classes": accidental_pc,
+              "key_signature_accidentals": accidental_pc,
+              "black_key_notes": black_key_notes,
               "preset_label": preset.get("label", preset_name),
               "capped_strikes": capped,
               "capped_dup": META_CAP_DETAIL.get("dup", 0),
