@@ -5,9 +5,11 @@ One audio link in, one playable score out: five-line staff images, numbered
 arrangement in three keys — and the name is the plan: other instruments next,
 and any agent that speaks MCP, not only DSH.
 
-The DSH plugin from this repository is published as **`dsh-pianochart`**, and
-that name is the only place `pianochart` survives: plugin catalogs want a name
-that says which product it plugs into.
+The DSH plugin from this repository is published to the plugin catalog as
+**`dsh-pianochart`**; its npm package is `pianochart-dsh`, since npm names are
+fixed per package. Those two are the only places `pianochart` survives: a
+catalog wants a name that says which product it plugs into, and renaming a
+published package would break every existing install.
 
 ```
 audio -> source separation (Demucs) -> melody and bass (pYIN, chroma)
