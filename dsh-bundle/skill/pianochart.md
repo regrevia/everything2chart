@@ -15,9 +15,8 @@ The three tiers are one arrangement: the same notes, the same rhythm, the same
 left-hand voicing. What changes is the key they are written in — `easy` uses the
 fewest black keys, `hard` the most — so a tier sits a few semitones above or
 below the others, and playback restores the original pitch so the record's key
-still sounds. Quote the key the result names when you hand over the images. Say which key it was written in when you hand over the images;
-the result names it. Do not promise an easier rhythm or fewer notes for `easy`;
-that is not what differs.
+still sounds. Name that key when you hand over the images; the result states it.
+Do not promise an easier rhythm or fewer notes for `easy`; that is not what differs.
 
 ## Fingering
 

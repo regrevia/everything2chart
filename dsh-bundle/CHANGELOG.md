@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.3
+
+The tier the skill calls easiest was, on both sample recordings, the hardest to
+play. Tiers were ordered by key signature, on the theory that a key with no
+accidentals is the easiest to read. That is a proxy, and it inverts whenever the
+piece is written around a key other than C: notating it in C turns each of the
+piece's own accidentals into a black key. Measured on the black keys actually
+under the hand:
+
+| sample | tier | before | after |
+| --- | --- | --- | --- |
+| clip1 | easy / medium / hard | 27 / 3 / 9 | 2 / 3 / 6 |
+| clip2 | easy / medium / hard | 70 / 16 / 24 | 0 / 16 / 24 |
+
+Tiers now rank on measured black keys, with the signature breaking ties, so
+`easy` is the one with the fewest. The notes and rhythm are untouched, so the
+tier-isomorphism guarantee still holds and note-F1 did not move.
+
+Also fixes bars that summed to the wrong length — the user complaint "4/4 的曲子
+有时候多一拍或者少半拍". A token that began late inside a beat kept its unclamped
+duration (bars came out at 4.25 beats), leading rests were emitted for events
+that started in an earlier beat, and holds were derived from note length rather
+than the note's end. Scanning every bar for its total duration, all tiers:
+
+| sample | jianpu before | after | staff |
+| --- | --- | --- | --- |
+| clip1 (96 bpm) | 4/8 bars at 4 beats | 8/8 | 16/16 unchanged |
+| clip2 (72 bpm) | 11/12 | 12/12 | 24/24 unchanged |
+
+Notes are no longer carried past the last bar line either (they were invisible,
+both renderers clipped them, but they made counts disagree: clip1 92 vs 87).
+The skill no longer says the same thing about the key twice.
+
+
 ## 0.2.2
 
 Fixes the checkout probe in `index.js`, which `0.2.0` shipped still looking for
