@@ -119,9 +119,10 @@ const PARAMETERS = {
       type: 'string',
       enum: ['easy', 'medium', 'hard'],
       description:
-        'Difficulty. All three tiers share one arrangement - the same rhythm, density and register - '
-        + 'and differ only in key signature, so easy has the fewest black keys and is the tier to '
-        + 'pick when the point is to play it. Playback restores the original pitch. Default easy.',
+        'Difficulty. The three tiers are one arrangement in three keys: the same notes, rhythm and '
+        + 'left-hand voicing, transposed so easy has the fewest black keys and hard the most, which '
+        + 'puts a tier a few semitones above or below the others. Pick easy when the point is to play '
+        + 'it. Playback restores the original pitch. Default easy.',
     },
     seconds: {
       type: 'number',

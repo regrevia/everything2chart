@@ -11,11 +11,11 @@ how to drive it; the tool description and its arguments are already in view.
 | The same piece with more of the record's colour | `medium` |
 | As close to the record as possible | `hard` |
 
-The three tiers share one arrangement: same rhythm, same density, same register
-(the left hand can shift by a semitone at the edge of its range when `easy` has
-to avoid a black key). What changes is the key — `easy` uses the fewest black
-keys, `hard` the most — and playback restores the original pitch, so the record's
-key still sounds. Say which key it was written in when you hand over the images;
+The three tiers are one arrangement: the same notes, the same rhythm, the same
+left-hand voicing. What changes is the key they are written in — `easy` uses the
+fewest black keys, `hard` the most — so a tier sits a few semitones above or
+below the others, and playback restores the original pitch so the record's key
+still sounds. Quote the key the result names when you hand over the images. Say which key it was written in when you hand over the images;
 the result names it. Do not promise an easier rhythm or fewer notes for `easy`;
 that is not what differs.
 

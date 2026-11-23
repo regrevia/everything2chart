@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.8
+
+- The docs stop claiming the tiers share a register. They share the notes,
+  rhythm and left-hand voicing, and each is written in its own key, so a tier
+  sits a few semitones above or below the others; saying "same register" was
+  a promise the transposed score cannot keep. The preset `range` is now
+  described for what it is: the working window the arrangement is built in,
+  before the final shift.
+
 ## 0.1.7
 
 - The three tiers are now the same notes, which is what the docs have been

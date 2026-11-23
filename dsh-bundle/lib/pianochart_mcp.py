@@ -34,8 +34,8 @@ TOOL = {
         "Turn one audio link into a piano score: five-line staff images, numbered (jianpu) "
         "notation, MusicXML and MIDI. Only background music is transcribed - vocals are "
         "separated out and dropped, and non-melodic instruments are folded into the left hand. "
-        "All three tiers share one arrangement and differ only in key signature, so easy has "
-        "the fewest black keys and is the tier to pick when the point is to play it. This runs "
+        "All three tiers are one arrangement in three keys - the same notes transposed, so easy "
+        "has the fewest black keys and is the tier to pick when the point is to play it. This runs "
         "a local CPU pipeline and takes minutes: pass seconds for a quick preview. Files are "
         "written to disk; the paths are in the result."
     ),
