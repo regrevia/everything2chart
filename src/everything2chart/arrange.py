@@ -17,6 +17,7 @@ import logging
 import numpy as np
 
 from .config import load_presets
+from .notation import tail_beats
 from .types import Arrangement, ChordEvent, NoteEvent, SongInfo
 
 log = logging.getLogger(__name__)
@@ -612,10 +613,26 @@ def _audio_pcs(y, sr: int, lo: float, hi: float, n_pcs: int = 3) -> list[int]:
     return [int(i) for i in order if c[i] >= 0.45 * top][:n_pcs]
 
 
+def _score_bar_count(info: SongInfo, spq: float, onsets=()) -> int:
+    """How many bars the score will actually have.
+
+    The arranger budgets its fills, accents and missing chord tones per bar,
+    and it used to count them from the file duration: ``duration / bar + 1``.
+    On an eight-bar take that is nine, so the last bar of every budget went to
+    a ninth bar that the renderer then clipped away, and the accents spent on
+    it never reached the bar the listener hears.  Both sides now ask
+    `notation.tail_beats`, so a bar the arranger writes is a bar that prints.
+    """
+    bpb = info.beats_per_bar
+    beats = tail_beats(onsets, info.duration, bpb, spq)
+    return max(1, int(np.ceil(beats / bpb)))
+
+
 def _build_left_hand(harmony: list[tuple[float, float, int]], preset: dict,
                      info: SongInfo, rh_min: int, pcs: set[int] | None = None,
                      transpose: int = 0,
-                     bass: list[NoteEvent] | None = None) -> list[NoteEvent]:
+                     bass: list[NoteEvent] | None = None,
+                     bars: int | None = None) -> list[NoteEvent]:
     """Skeleton + chord tones for the left hand.
 
     Pitch-class spaces, which is where the eight bugs in this function's history
@@ -636,7 +653,7 @@ def _build_left_hand(harmony: list[tuple[float, float, int]], preset: dict,
     budget = lh["events_per_bar"]
     spq = 60.0 / info.bpm if info.bpm else 0.5
     bar = spq * info.beats_per_bar
-    total_bars = int(info.duration / bar) + 1
+    total_bars = bars or int(info.duration / bar) + 1
 
     def harmony_at(t: float) -> int:
         for s_, e_, pc in harmony:
@@ -700,7 +717,8 @@ def _build_left_hand(harmony: list[tuple[float, float, int]], preset: dict,
                                          velocity=72 if v_i == 0 else 60 - 4 * v_i,
                                          stem="arranger"))
     if bass:
-        out = _anchor_bass_roots(out, bass, info, lo, hi, transpose, pcs)
+        out = _anchor_bass_roots(out, bass, info, lo, hi, transpose, pcs,
+                                 bars=bars)
     return out
 
 
@@ -733,6 +751,52 @@ def scale_pcs(key: str) -> set[int]:
     return {(tonic + i) % 12 for i in base}
 
 
+BLACK_PCS = {1, 3, 6, 8, 10}
+
+
+def _shifted_name(key: str, semis: int) -> str:
+    """The name of `key` after `semis` semitones, mode unchanged."""
+    name = key[:-1] if key.endswith("m") else key
+    tonic = (_tonic_pc(key) + semis) % 12
+    for spelled in (PC_NAMES[tonic], PC_NAMES_ALT[tonic]):
+        if spelled is not None:
+            return spelled + ("m" if key.endswith("m") else "")
+    return PC_NAMES[tonic] + ("m" if key.endswith("m") else "")
+
+
+def ranked_plan(key: str, pitches, rank: int) -> tuple[int, str]:
+    """Shift for tier `rank`, ordered by the black keys it puts under the hand.
+
+    The tiers used to be ordered by *key signature* -- C major has none, so it
+    looked like the easiest thing to read.  Measured against the recording that
+    was backwards: a piece written around a key other than C carries accidentals,
+    and naming it C turns every one of those into a black key.  On the two
+    samples here the "no accidentals" tier landed 27 and 70 black-key notes
+    against 2 and 0 for a key with a real signature, so the tier advertised as
+    easiest was the hardest to play.  A signature is only a proxy; the number of
+    black keys actually under the fingers is the thing being promised, so rank on
+    that first and use the signature to break ties.
+    """
+    tonic = _tonic_pc(key)
+    mode = MINOR_SCALE if key.endswith("m") else MAJOR_SCALE
+    rows = []
+    for semis in range(-6, 7):
+        black = sum(1 for p in pitches if (p + semis) % 12 in BLACK_PCS)
+        signature = len([p for p in mode if (p + tonic + semis) % 12 in BLACK_PCS])
+        rows.append((black, signature, abs(semis), semis))
+    rows.sort()
+    # Distinct keys per tier: equal scores are broken by the smaller shift so the
+    # three tiers never collapse onto the same notation.
+    seen = []
+    for row in rows:
+        if all(row[3] != taken for taken in seen):
+            seen.append(row[3])
+        if len(seen) > rank:
+            break
+    semis = seen[min(rank, len(seen) - 1)]
+    return semis, _shifted_name(key, semis)
+
+
 def _shift_to(key: str, target: str) -> int:
     """Smallest signed semitone shift that writes `key` as `target`."""
     shift = (_tonic_pc(target) - _tonic_pc(key)) % 12
@@ -740,7 +804,8 @@ def _shift_to(key: str, target: str) -> int:
 
 
 def transpose_plan(key: str, allowed_black: int,
-                   target: str | None = None) -> tuple[int, str]:
+                   target: str | None = None, pitches=None,
+                   rank: int | None = None) -> tuple[int, str]:
     """Semitones to shift so the score is notated in `target`.
 
     A tier is allowed to differ from another in exactly two things: how complex
@@ -751,6 +816,8 @@ def transpose_plan(key: str, allowed_black: int,
     across tiers, which is what makes one transcription three readable versions
     of the same piece instead of three different reductions.
     """
+    if rank is not None and pitches:
+        return ranked_plan(key, pitches, rank)
     if target:
         return _shift_to(key, target), target
     current = len(scale_pcs(key) & {1, 3, 6, 8, 10})
@@ -773,7 +840,8 @@ def transpose_plan(key: str, allowed_black: int,
 
 def _anchor_bass_roots(out: list[NoteEvent], bass: list[NoteEvent], info: SongInfo,
                        lo: int, hi: int, transpose: int,
-                       pcs: set[int] | None = None) -> list[NoteEvent]:
+                       pcs: set[int] | None = None,
+                       bars: int | None = None) -> list[NoteEvent]:
     """Every bar must state the pitch class of the bass stem's dominant note.
 
     This is the single cheapest thing that keeps a sparse arrangement sounding like
@@ -783,7 +851,7 @@ def _anchor_bass_roots(out: list[NoteEvent], bass: list[NoteEvent], info: SongIn
     key signature when the two disagree.
     """
     bar = 60.0 / info.bpm * info.beats_per_bar if info.bpm else 2.0
-    for b in range(int(info.duration / bar) + 1):
+    for b in range(bars or int(info.duration / bar) + 1):
         t0, t1 = b * bar, (b + 1) * bar
         seg = [n for n in bass if n.start < t1 and n.start + n.dur > t0]
         here = [n for n in out if t0 <= n.start < t1]
@@ -807,7 +875,8 @@ def _anchor_bass_roots(out: list[NoteEvent], bass: list[NoteEvent], info: SongIn
 
 
 def _anchor_roots(lh: list[NoteEvent], harmony, info: SongInfo,
-                  lh_cfg: dict, transpose: int) -> list[NoteEvent]:
+                  lh_cfg: dict, transpose: int,
+                  bars: int | None = None) -> list[NoteEvent]:
     """Make every bar's left hand state that bar's chord root.
 
     A skeleton thinned to the beat grid, a thinning pass, or a share-the-beat
@@ -823,7 +892,7 @@ def _anchor_roots(lh: list[NoteEvent], harmony, info: SongInfo,
         return lh
     bar = 60.0 / info.bpm * info.beats_per_bar if info.bpm else 2.0
     lo, hi = lh_cfg["range"]
-    total = int(info.duration / bar) + 1
+    total = bars or int(info.duration / bar) + 1
 
     def root_at(t: float) -> int | None:
         # Source key's pitch-class space: this is compared against `src`, which
@@ -928,7 +997,8 @@ def _release(hold: float, info: SongInfo) -> float:
 def _fill_silent_bars(rh: list[NoteEvent], lh: list[NoteEvent], info: SongInfo,
                       spq: float, lh_cfg: dict, harmony, transpose: int,
                       ref: tuple | None,
-                      source_key: str | None = None) -> list[NoteEvent]:
+                      source_key: str | None = None,
+                      bars: int | None = None) -> list[NoteEvent]:
     """Hold a chord under every bar the accompaniment leaves thin.
 
     A transcription-driven left hand follows the notes it was given, so a bar
@@ -947,7 +1017,7 @@ def _fill_silent_bars(rh: list[NoteEvent], lh: list[NoteEvent], info: SongInfo,
     bar = spq * info.beats_per_bar
     lo, hi = lh_cfg["range"]
     hi = min(hi, min((n.pitch for n in rh), default=hi + 2) - 2)
-    total_bars = int(info.duration / bar) + 1
+    total_bars = bars or int(info.duration / bar) + 1
     budget = lh_cfg["events_per_bar"]
     max_notes = 3 if budget <= 7 else 4
     last_sound = max([n.start + n.dur for n in list(rh) + list(lh)], default=0.0)
@@ -999,7 +1069,8 @@ def _fill_silent_bars(rh: list[NoteEvent], lh: list[NoteEvent], info: SongInfo,
 
 def _cover_empty_bars(lh: list[NoteEvent], rh: list[NoteEvent], info: SongInfo,
                       spq: float, lh_cfg: dict, harmony, transpose: int,
-                      ref: tuple | None) -> list[NoteEvent]:
+                      ref: tuple | None,
+                      bars: int | None = None) -> list[NoteEvent]:
     """Put the bass back under a bar the left hand leaves completely open.
 
     `_cover_missing_tones` can only thicken a chord that is already there, so a
@@ -1018,7 +1089,7 @@ def _cover_empty_bars(lh: list[NoteEvent], rh: list[NoteEvent], info: SongInfo,
     bar = spq * info.beats_per_bar
     lo, hi = lh_cfg["range"]
     hi = min(hi, min((n.pitch for n in rh), default=hi + 2) - 2)
-    total = int(info.duration / bar) + 1
+    total = bars or int(info.duration / bar) + 1
     have: set[int] = set()
     for n in lh:
         for b in range(int(n.start // bar), int((n.start + n.dur - 1e-6) // bar) + 1):
@@ -1092,7 +1163,8 @@ def _strong_pitch_classes(y, sr: int, lo: float, hi: float,
 
 def _cover_missing_tones(rh: list[NoteEvent], lh: list[NoteEvent], info: SongInfo,
                          spq: float, lh_cfg: dict, transpose: int,
-                         ref: tuple | None, tier: str) -> list[NoteEvent]:
+                         ref: tuple | None, tier: str,
+                         bars: int | None = None) -> list[NoteEvent]:
     """Voice the recording's sustained pitch classes the left hand leaves out.
 
     A bar can be loud and still lack what the listener hears as the chord: the
@@ -1111,7 +1183,7 @@ def _cover_missing_tones(rh: list[NoteEvent], lh: list[NoteEvent], info: SongInf
     lo, hi = lh_cfg["range"]
     hi = min(hi, min((n.pitch for n in rh), default=hi + 2) - 2)
     cap = 2
-    total = int(info.duration / bar) + 1
+    total = bars or int(info.duration / bar) + 1
     present: dict[int, list[NoteEvent]] = {}
     for n in lh:
         for b in range(int(n.start // bar), int((n.start + n.dur - 1e-6) // bar) + 1):
@@ -1301,6 +1373,11 @@ def build_arrangement(
                         beats=[b - origin for b in info.beats],
                         beats_per_bar=info.beats_per_bar, beat_origin=0.0)
     spq = 60.0 / info.bpm if info.bpm else 0.5
+    # How many bars the score will have, decided the same way the renderer
+    # decides it so every per-bar budget lands on a bar that prints.  Taken
+    # from the transcribed onsets, which is what both hands are built out of.
+    score_bars = _score_bar_count(info, spq,
+                                  [n.start for n in melody] + [n.start for n in bass])
     rh_cfg = preset["right_hand"]
     lo_rh, hi_rh = rh_cfg["range"]
 
@@ -1308,7 +1385,9 @@ def build_arrangement(
     key, _ = estimate_key(original_pitch_classes(melody, bass))
     shift, notated_key = transpose_plan(
         key, preset["global"].get("allowed_black_keys", 12),
-        preset["global"].get("target_key"))
+        preset["global"].get("target_key"),
+        pitches=[n.pitch for n in melody] + [n.pitch for n in bass],
+        rank=preset["global"].get("black_key_rank"))
     # The tiers may differ in exactly one thing: this semitone count.  So the
     # arrangement is built in the source key, where no stage can see which key
     # it will be printed in, and shifted once at the very end.  Building in the
@@ -1340,7 +1419,7 @@ def build_arrangement(
     rh.sort(key=lambda n: n.start)
     rh_min = min((n.pitch for n in rh), default=hi_rh)
     lh = _build_left_hand(harmony, preset, info, rh_min, pcs=pcs,
-                          transpose=transpose, bass=bass)
+                          transpose=transpose, bass=bass, bars=score_bars)
     if rh_spill:
         folded = [_fold_into(lh, n, preset["left_hand"]["range"], spq) for n in rh_spill]
         lh = lh + [f for f in folded if f is not None]
@@ -1359,12 +1438,14 @@ def build_arrangement(
     lh = _dedupe_unisons(_share_beat_length(_clip_to_beats(
         _share_beat_length(_quantise_hand(lh, spq), spq), spq), spq))
     lh = _fill_silent_bars(rh, lh, info, spq, preset["left_hand"],
-                           harmony, transpose, ref_audio, key)
+                           harmony, transpose, ref_audio, key, bars=score_bars)
     lh = _cover_missing_tones(rh, lh, info, spq, preset["left_hand"],
-                             transpose, ref_audio, preset_name)
+                             transpose, ref_audio, preset_name,
+                             bars=score_bars)
     lh = _cover_empty_bars(lh, rh, info, spq, preset["left_hand"],
-                           harmony, transpose, ref_audio)
-    lh = _anchor_roots(lh, harmony, info, preset["left_hand"], transpose)
+                           harmony, transpose, ref_audio, bars=score_bars)
+    lh = _anchor_roots(lh, harmony, info, preset["left_hand"], transpose,
+                       bars=score_bars)
     # Spelling is the only thing the key is allowed to decide here.  Every stage
     # above writes notes from the transcription, the harmony timeline or the
     # chord tones, and each of them can be a semitone off the key; snapping each
@@ -1422,9 +1503,20 @@ def build_arrangement(
         rh = _shift(rh, origin)
         lh = _shift(lh, origin)
     accidental_pc = len(scale_pcs(notated_key) & {1, 3, 6, 8, 10})
+    # Drop the notes that fall outside the score.  Both renderers already clip
+    # them -- a note opening after the last bar line cannot be printed -- so
+    # they were only ever a phantom: the pickle counted five notes of clip1
+    # that no reader would ever see, and a note-count comparison against the
+    # printed notation disagreed for no real reason.  The detector's tail
+    # blip is exactly what :func:`tail_beats` exists to exclude, so it must not
+    # survive into the score either.
+    score_beats = int(score_bars * info.beats_per_bar)
+    end = score_beats * spq - 1e-9
+    rh = [n for n in rh if n.start < end]
+    lh = [n for n in lh if n.start < end]
     return Arrangement(
         right=rh, left=lh, info=info, preset=preset_name, key_signature=notated_key,
-        meta={"transpose": shift, "source_key": key,
+        meta={"transpose": shift, "source_key": key, "score_beats": score_beats,
               "accidental_pitch_classes": accidental_pc,
               "preset_label": preset.get("label", preset_name),
               "capped_strikes": capped,

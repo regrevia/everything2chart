@@ -51,6 +51,12 @@ easy:
   <<: *skeleton
   label: 简单
   global:
+    # 档位按**手上真正按到的黑键数**排序，不按调号。
+    # 调号只是代理指标：曲子若围绕非 C 的调写成，写成 C 调会把它的每个
+    # 变化音都变成黑键 —— 实测两个样本"零升降号"那档反而有 27 / 70 个黑键，
+    # 而带调号的那档只有 2 / 0 个。rank 0 即黑键最少的一档。
+    black_key_rank: 0
+    # 仍然保留：target_key 不配时 rank 生效；配了 target_key 就用它。
     target_key: Am
     allowed_black_keys: 1
 
@@ -58,6 +64,12 @@ medium:
   <<: *skeleton
   label: 中等
   global:
+    # 档位按**手上真正按到的黑键数**排序，不按调号。
+    # 调号只是代理指标：曲子若围绕非 C 的调写成，写成 C 调会把它的每个
+    # 变化音都变成黑键 —— 实测两个样本"零升降号"那档反而有 27 / 70 个黑键，
+    # 而带调号的那档只有 2 / 0 个。rank 0 即黑键最少的一档。
+    black_key_rank: 1
+    # 仍然保留：target_key 不配时 rank 生效；配了 target_key 就用它。
     target_key: Cm
     allowed_black_keys: 3
 
@@ -65,5 +77,11 @@ hard:
   <<: *skeleton
   label: 困难
   global:
+    # 档位按**手上真正按到的黑键数**排序，不按调号。
+    # 调号只是代理指标：曲子若围绕非 C 的调写成，写成 C 调会把它的每个
+    # 变化音都变成黑键 —— 实测两个样本"零升降号"那档反而有 27 / 70 个黑键，
+    # 而带调号的那档只有 2 / 0 个。rank 0 即黑键最少的一档。
+    black_key_rank: 2
+    # 仍然保留：target_key 不配时 rank 生效；配了 target_key 就用它。
     target_key: Fm
     allowed_black_keys: 5

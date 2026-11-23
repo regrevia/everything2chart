@@ -315,6 +315,32 @@ def _key_parts(key_sig: str) -> tuple[int, bool]:
     raise ValueError(f"unknown key signature {key_sig!r}")
 
 
+def _token_beats(tok: str) -> float:
+    """Length of one printed numbered-notation token, in beats.
+
+    The header legend is the whole contract: a bare number is one beat, each
+    ``_`` halves it, a ``.`` adds half, ``-`` holds for whole beats and
+    ``[a+b]`` is a chord that lasts as long as its longest member.  Reading it
+    back is what lets the writer know how much of a beat a strike actually
+    used, and therefore how much rest it has to print to finish the bar.
+    """
+    t = tok.strip()
+    if t.startswith("[") and t.endswith("]"):
+        return max((_token_beats(m) for m in t[1:-1].split("+")), default=0.0)
+    t = t.strip("()")
+    if not t:
+        return 0.0
+    if set(t) <= {"-"}:
+        return float(len(t))
+    b = 1.0
+    for ch in t:
+        if ch == "_":
+            b /= 2.0
+        elif ch == ".":
+            b *= 1.5
+    return b
+
+
 def _solfa(pitch: int, tonic: int, flat: bool = False) -> str:
     pc = (pitch - tonic) % 12
     base = _PC_TO_SOLFA.get(pc)
@@ -357,9 +383,31 @@ def _score_beats(arr: Arrangement, bpb: int, spq: float) -> int:
     error, and over a couple of minutes that is more than enough to push the
     last real onset across a bar line on its own.
     """
-    last = max((n.start for n in list(arr.right) + list(arr.left)), default=0.0)
-    end = last if last > 0 else arr.info.duration
-    beats = max(1, int(np.ceil(end / spq - 1e-6)))
+    decided = (arr.meta or {}).get("score_beats")
+    if decided:
+        # The arranger already decided how long the score is, before it pruned
+        # the notes past the end.  Re-deciding it here from the pruned notes
+        # would be self-referential -- dropping the tail shortens the count,
+        # which drops more of the tail -- and the score would creep inwards
+        # every time it was rendered.
+        return int(decided)
+    return tail_beats((n.start for n in list(arr.right) + list(arr.left)),
+                      arr.info.duration, bpb, spq)
+
+
+def tail_beats(onsets, end: float, bpb: int, spq: float) -> int:
+    """The bar-count rule, on onsets alone so the arranger can ask it too.
+
+    Divided out of :func:`_score_beats` because `arrange.py` budgets its fills
+    in bars as well, and while it was counting bars from the duration it wrote
+    a ninth bar of filler onto an eight-bar piece.  Nothing leaked into the
+    score -- the renderer clipped it -- but the arranger spent its accent and
+    root budgets on a bar nobody would ever see, and every such note cost a
+    slot a real one could have had.
+    """
+    last = max(onsets, default=0.0)
+    tail = last if last > 0 else end
+    beats = max(1, int(np.ceil(tail / spq - 1e-6)))
     rest = beats % bpb
     if 0 < rest < bpb / 2.0:
         beats -= rest
@@ -404,6 +452,12 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
             beat = int(beat_pos + 1e-6)
             slot = min(sub - 1, int((beat_pos - beat) * sub + 1e-6))
             beats = e.dur / spq
+            # A note near the end of a beat cannot be spelled at its full
+            # length inside that beat: the cell would run past the beat and
+            # the bar past its metre.  Spell only the part that fits and let
+            # the "-" hold carry the rest over the following beats.
+            shown = max(1.0 / sub, min(beats, 1.0 - slot / float(sub)))
+            beats = shown
             whole, rest = divmod(max(1, int(round(beats * sub))), sub)
             dot, under = "", 0
             if rest:
@@ -420,9 +474,20 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
             bucket = strikes[hand].setdefault(beat, {}).setdefault(slot, [])
             if token not in bucket:             # the same pitch twice is a tie
                 bucket.append(token)
-                lengths[hand].setdefault(beat, []).append(beats)
+                # Remember where the note actually stops sounding, not how
+                # long it was: a note that begins late may leave only part of
+                # its length inside this beat.
+                lengths[hand].setdefault(beat, []).append(beat_pos + e.dur / spq)
 
-    def beat_text(hand: str, beat: int, hold_until: int) -> tuple[str, int]:
+    def beat_text(hand: str, beat: int, hold_until: int) -> tuple[str, int, float]:
+        """Text for one beat of one hand, the hold window, and the beat it fills.
+
+        The fill is returned because a beat's tokens do not have to add up to a
+        beat: two sixteenths under a dotted-eighth left hand fill three quarters
+        of it, and a paragraph that stops there makes the printed bar short.
+        The caller pads the remainder with a rest, so every bar reads as its
+        metre however sparse the hand is.
+        """
         slots = strikes[hand].get(beat)
         if slots:
             columns = ["[%s]" % "+".join(strikes[hand][beat][k]) if len(strikes[hand][beat][k]) > 1
@@ -433,26 +498,59 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
             # "-" from stretching a short note into its neighbour's length.
             # A token with no dot and no underscore already means one whole
             # beat, so such a strike needs one dash fewer than its beat count.
-            holes = min(max(0, int(round(bl * sub)) // sub
-                            - (1 if int(round(bl * sub)) % sub == 0 else 0))
-                        for bl in lengths[hand][beat])
-            return " ".join(columns), beat + holes
+            holes = min(max(0, int(np.ceil(end - 1e-9)) - beat - 1)
+                        for end in lengths[hand][beat])
+            filled = 0.0
+            for k in sorted(strikes[hand][beat]):
+                # Read the length back off the printed token instead of the
+                # strike list: a token means one whole beat unless it carries
+                # underscores or a dot, and a chord lasts as long as its
+                # longest member because every member is struck together.
+                for tok in strikes[hand][beat][k]:
+                    filled = max(filled, k / float(sub) + _token_beats(tok))
+            # A strike that starts late leaves a hole before it, and a beat
+            # with a hole in front of it reads as a shorter beat.  Spell it out
+            # so the bar still sums to its metre from the first cell.
+            lead = min(sorted(strikes[hand][beat])) / float(sub)
+            if lead > 1e-9:
+                columns.insert(0, rest_text(lead))
+            return (" ".join(columns), beat + holes,
+                    min(1.0, filled))
         if beat <= hold_until:
-            return "-", hold_until
-        return "", beat - 1
+            return "-", hold_until, 1.0
+        return "", beat - 1, 0.0
+
+    def rest_text(beats: float) -> str:
+        """A rest of `beats` inside one beat, in the same spelling as a note."""
+        n = int(round(beats * sub))
+        if n <= 0:
+            return ""
+        for k in range(4):
+            if n * (2 ** k) == sub:
+                return "0" + "_" * k
+            if n * (2 ** k) * 2 == sub * 3:
+                return "0" + "." + "_" * k
+        return "0" + "_" * max(0, min(2, int(round(np.log2(sub / n)))))
 
     hold_until = {"R": -1, "L": -1}
     for bar in range(0, total_beats, bpb):
         cells = []
         for b in range(bar, min(bar + bpb, total_beats)):
-            rh, hold_until["R"] = beat_text("R", b, hold_until["R"])
-            lh, hold_until["L"] = beat_text("L", b, hold_until["L"])
+            rh, hold_until["R"], fill_r = beat_text("R", b, hold_until["R"])
+            lh, hold_until["L"], fill_l = beat_text("L", b, hold_until["L"])
+            # Pad a hand that does not use the whole beat, so the bar sums to
+            # its metre.  A bar that stops half a beat early is the "少半拍"
+            # a reader hears even though the staff was engraved correctly.
+            if rh and fill_r < 1.0 - 1e-9:
+                rh += " " + rest_text(1.0 - fill_r)
+            if lh and fill_l < 1.0 - 1e-9:
+                lh += " " + rest_text(1.0 - fill_l)
             if not rh and not lh:
                 cells.append("0")
             elif rh and lh:
                 cells.append(rh + "(" + lh + ")")
             else:
-                cells.append(rh or "(" + lh + ")")
+                cells.append("(" + lh + ")")
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
 
