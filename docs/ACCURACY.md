@@ -28,16 +28,18 @@ PYTHONPATH=src .venv/bin/python scripts/note_f1.py bench/clip1.truth.json out/cl
 
 ## 当前数字
 
-`--tolerance 0.30`，`easy` 档，21 秒分离口径：
+`--tolerance 0.30`，`easy` 档，21 秒分离口径（`out/bench28`，`black_key_notes` 修复后重测）：
 
 | 指标 | 数值 |
 | --- | --- |
-| note-F1（全体） | **0.5742**（precision 0.6522 / recall 0.5128，命中 60/117，预测 92） |
-| pitch-class F1 | **0.6699** |
-| note-F1（右手） | 0.6538 |
-| note-F1（左手） | 0.4952 |
+| note-F1（全体） | **0.5882**（precision 0.6897 / recall 0.5128，命中 60/117，预测 87） |
+| pitch-class F1 | **0.6863**（precision 0.8046 / recall 0.5983，命中 70/117） |
+| note-F1（右手） | 0.6667（precision 0.7083 / recall 0.6296） |
+| note-F1（左手） | 0.5098（precision 0.6667 / recall 0.4127） |
 
-另有一个独立样本 `bench/clip2.wav`（12 小节 4/4、72 bpm、41 秒、180 音符，`--seed 7 --bars 12 --bpm 72` 可重生成），同样 `--tolerance 0.30`、`easy` 档、`--no-separate` 口径：note-F1 **0.4262**、pc-F1 **0.5410**。它比 clip1 低是口径不同（混合音频直接转写，没有分离），不是退化——两个样本之间不可横比，只用于验证节拍与尾小节。
+召回是瓶颈，precision 已经不低：117 个真音符里只找回 60 个（`0.5128`），但预测出的 87 个里有 60 个对得上（`0.6897`）。左手 recall `0.4127` 是全表最弱的一列，`note-F1（左手）` 的下降主要来自漏音而不是错音。
+
+另有一个独立样本 `bench/clip2.wav`（12 小节 4/4、72 bpm、41 秒、180 音符，`--seed 7 --bars 12 --bpm 72` 可重生成），同样 `--tolerance 0.30`、`easy` 档、`--no-separate` 口径：note-F1 **0.4309**（命中 78/180，预测 182）、pc-F1 **0.5470**。它比 clip1 低是口径不同（混合音频直接转写，没有分离），不是退化——两个样本之间不可横比，只用于验证节拍与尾小节。
 
 三档 `easy`/`medium`/`hard` 的数字**完全相同**。这是设计，不是巧合：三档只差移调量（`global.black_key_rank` 决定），音高集合和节奏不变。任何一档的数字和其它档对不上，就是档位同构被破坏。
 
@@ -67,7 +69,9 @@ PYTHONPATH=src .venv/bin/python scripts/note_f1.py bench/clip1.truth.json out/cl
 | 补 onset 切分 | 0.3892 | 0.4973 | `cqt_melody` 接上 `_cut_at_onsets`，旋律音数 22 → 59 |
 | 去重窗口收紧到槽 | 0.4925 | 0.5829 | `_dedupe_beats` 从「每拍一个」改成「每 16 分槽一个」 |
 | 合并窗口收紧到槽 | 0.5604 | 0.6667 | `_collapse_beat_onsets` 同样从拍改到槽，右手 note-F1 0.2927 → 0.6538 |
-| 节拍八度与网格 | **0.5742** | **0.6699** | `estimate_metre` 按重音重选速度八度与拍号，`_score_beats` 统一两种谱的节数，`beat_origin` 记拍零点 |
+| 节拍八度与网格 | 0.5742 | 0.6699 | `estimate_metre` 按重音重选速度八度与拍号，`_score_beats` 统一两种谱的节数，`beat_origin` 记拍零点 |
+| 去掉末小节线之后的音符 | **0.5882** | **0.6863** | 源码级截断到 `score_beats`，预测 92 → 87（那 5 个音两个渲染器都会裁掉，只让计数互相对不上） |
+| 档位改按黑键排序 | **0.5882** | **0.6863** | 逐位不变，这是档位同构该有的结果：换调不增删音符 |
 
 ## 小节宽度验收（用户反馈「多一拍 / 少半拍」）
 
