@@ -1,0 +1,827 @@
+{
+ "sr": 44100,
+ "bpm": 96.0,
+ "seed": 1,
+ "duration": 21.0,
+ "notes": [
+  {
+   "pitch": 74,
+   "start": 0.0,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 78
+  },
+  {
+   "pitch": 76,
+   "start": 0.625,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 82
+  },
+  {
+   "pitch": 74,
+   "start": 0.9375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 70
+  },
+  {
+   "pitch": 76,
+   "start": 1.25,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 89
+  },
+  {
+   "pitch": 74,
+   "start": 1.5625,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 84
+  },
+  {
+   "pitch": 71,
+   "start": 1.875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 88
+  },
+  {
+   "pitch": 71,
+   "start": 2.1875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 70
+  },
+  {
+   "pitch": 72,
+   "start": 2.8125,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 76
+  },
+  {
+   "pitch": 76,
+   "start": 3.125,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 77,
+   "start": 3.4375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 87
+  },
+  {
+   "pitch": 76,
+   "start": 3.75,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 77
+  },
+  {
+   "pitch": 76,
+   "start": 4.0625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 83
+  },
+  {
+   "pitch": 77,
+   "start": 4.375,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 73
+  },
+  {
+   "pitch": 79,
+   "start": 4.6875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 73
+  },
+  {
+   "pitch": 79,
+   "start": 5.0,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 79,
+   "start": 5.3125,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 96
+  },
+  {
+   "pitch": 79,
+   "start": 5.625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 79
+  },
+  {
+   "pitch": 79,
+   "start": 5.9375,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 82
+  },
+  {
+   "pitch": 79,
+   "start": 6.25,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 77
+  },
+  {
+   "pitch": 79,
+   "start": 6.5625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 91
+  },
+  {
+   "pitch": 79,
+   "start": 6.875,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 94
+  },
+  {
+   "pitch": 79,
+   "start": 7.1875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 84
+  },
+  {
+   "pitch": 79,
+   "start": 7.5,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 79,
+   "start": 7.8125,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 93
+  },
+  {
+   "pitch": 79,
+   "start": 8.75,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 88
+  },
+  {
+   "pitch": 79,
+   "start": 9.0625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 79,
+   "start": 9.375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 87
+  },
+  {
+   "pitch": 79,
+   "start": 9.6875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 82
+  },
+  {
+   "pitch": 79,
+   "start": 10.0,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 81
+  },
+  {
+   "pitch": 79,
+   "start": 10.3125,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 87
+  },
+  {
+   "pitch": 79,
+   "start": 10.625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 82
+  },
+  {
+   "pitch": 79,
+   "start": 10.9375,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 79,
+   "start": 11.25,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 76
+  },
+  {
+   "pitch": 79,
+   "start": 11.5625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 97
+  },
+  {
+   "pitch": 79,
+   "start": 11.875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 100
+  },
+  {
+   "pitch": 79,
+   "start": 12.1875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 83
+  },
+  {
+   "pitch": 79,
+   "start": 12.5,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 89
+  },
+  {
+   "pitch": 79,
+   "start": 12.8125,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 89
+  },
+  {
+   "pitch": 79,
+   "start": 13.4375,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 88
+  },
+  {
+   "pitch": 79,
+   "start": 13.75,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 95
+  },
+  {
+   "pitch": 79,
+   "start": 14.0625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 96
+  },
+  {
+   "pitch": 79,
+   "start": 14.375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 97
+  },
+  {
+   "pitch": 79,
+   "start": 15.3125,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 73
+  },
+  {
+   "pitch": 79,
+   "start": 15.625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 79
+  },
+  {
+   "pitch": 79,
+   "start": 16.25,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 91
+  },
+  {
+   "pitch": 79,
+   "start": 16.5625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 84
+  },
+  {
+   "pitch": 79,
+   "start": 16.875,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 73
+  },
+  {
+   "pitch": 79,
+   "start": 17.5,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 78
+  },
+  {
+   "pitch": 79,
+   "start": 18.125,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 100
+  },
+  {
+   "pitch": 79,
+   "start": 18.4375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 77
+  },
+  {
+   "pitch": 79,
+   "start": 19.0625,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 84
+  },
+  {
+   "pitch": 79,
+   "start": 19.375,
+   "dur": 0.3125,
+   "role": "rh",
+   "velocity": 87
+  },
+  {
+   "pitch": 79,
+   "start": 19.6875,
+   "dur": 0.625,
+   "role": "rh",
+   "velocity": 86
+  },
+  {
+   "pitch": 38,
+   "start": 0.0,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 76
+  },
+  {
+   "pitch": 50,
+   "start": 0.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 60
+  },
+  {
+   "pitch": 54,
+   "start": 0.0,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 81
+  },
+  {
+   "pitch": 57,
+   "start": 0.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 85
+  },
+  {
+   "pitch": 36,
+   "start": 1.25,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 80
+  },
+  {
+   "pitch": 48,
+   "start": 1.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 61
+  },
+  {
+   "pitch": 51,
+   "start": 1.25,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 69
+  },
+  {
+   "pitch": 55,
+   "start": 1.25,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 66
+  },
+  {
+   "pitch": 33,
+   "start": 2.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 62
+  },
+  {
+   "pitch": 45,
+   "start": 2.5,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 69
+  },
+  {
+   "pitch": 48,
+   "start": 2.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 83
+  },
+  {
+   "pitch": 52,
+   "start": 2.5,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 73
+  },
+  {
+   "pitch": 40,
+   "start": 3.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 64
+  },
+  {
+   "pitch": 52,
+   "start": 3.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 77
+  },
+  {
+   "pitch": 56,
+   "start": 3.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 78
+  },
+  {
+   "pitch": 59,
+   "start": 3.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 78
+  },
+  {
+   "pitch": 38,
+   "start": 5.0,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 84
+  },
+  {
+   "pitch": 50,
+   "start": 5.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 79
+  },
+  {
+   "pitch": 54,
+   "start": 5.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 61
+  },
+  {
+   "pitch": 57,
+   "start": 5.0,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 66
+  },
+  {
+   "pitch": 36,
+   "start": 6.25,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 66
+  },
+  {
+   "pitch": 48,
+   "start": 6.25,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 81
+  },
+  {
+   "pitch": 51,
+   "start": 6.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 78
+  },
+  {
+   "pitch": 55,
+   "start": 6.25,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 75
+  },
+  {
+   "pitch": 33,
+   "start": 7.5,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 72
+  },
+  {
+   "pitch": 45,
+   "start": 7.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 76
+  },
+  {
+   "pitch": 48,
+   "start": 7.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 60
+  },
+  {
+   "pitch": 52,
+   "start": 7.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 79
+  },
+  {
+   "pitch": 43,
+   "start": 8.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 69
+  },
+  {
+   "pitch": 55,
+   "start": 8.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 65
+  },
+  {
+   "pitch": 59,
+   "start": 8.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 70
+  },
+  {
+   "pitch": 62,
+   "start": 8.75,
+   "dur": 1.25,
+   "role": "rh",
+   "velocity": 85
+  },
+  {
+   "pitch": 33,
+   "start": 10.0,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 73
+  },
+  {
+   "pitch": 45,
+   "start": 10.0,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 68
+  },
+  {
+   "pitch": 48,
+   "start": 10.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 63
+  },
+  {
+   "pitch": 52,
+   "start": 10.0,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 77
+  },
+  {
+   "pitch": 36,
+   "start": 11.25,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 77
+  },
+  {
+   "pitch": 48,
+   "start": 11.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 84
+  },
+  {
+   "pitch": 51,
+   "start": 11.25,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 67
+  },
+  {
+   "pitch": 55,
+   "start": 11.25,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 83
+  },
+  {
+   "pitch": 33,
+   "start": 12.5,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 64
+  },
+  {
+   "pitch": 45,
+   "start": 12.5,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 65
+  },
+  {
+   "pitch": 48,
+   "start": 12.5,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 66
+  },
+  {
+   "pitch": 52,
+   "start": 12.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 84
+  },
+  {
+   "pitch": 36,
+   "start": 13.75,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 76
+  },
+  {
+   "pitch": 48,
+   "start": 13.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 71
+  },
+  {
+   "pitch": 51,
+   "start": 13.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 70
+  },
+  {
+   "pitch": 55,
+   "start": 13.75,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 69
+  },
+  {
+   "pitch": 33,
+   "start": 15.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 84
+  },
+  {
+   "pitch": 45,
+   "start": 15.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 75
+  },
+  {
+   "pitch": 48,
+   "start": 15.0,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 78
+  },
+  {
+   "pitch": 52,
+   "start": 15.0,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 84
+  },
+  {
+   "pitch": 33,
+   "start": 16.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 61
+  },
+  {
+   "pitch": 45,
+   "start": 16.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 62
+  },
+  {
+   "pitch": 48,
+   "start": 16.25,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 85
+  },
+  {
+   "pitch": 52,
+   "start": 16.25,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 64
+  },
+  {
+   "pitch": 36,
+   "start": 17.5,
+   "dur": 0.625,
+   "role": "lh",
+   "velocity": 79
+  },
+  {
+   "pitch": 48,
+   "start": 17.5,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 85
+  },
+  {
+   "pitch": 51,
+   "start": 17.5,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 62
+  },
+  {
+   "pitch": 55,
+   "start": 17.5,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 77
+  },
+  {
+   "pitch": 33,
+   "start": 18.75,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 62
+  },
+  {
+   "pitch": 45,
+   "start": 18.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 71
+  },
+  {
+   "pitch": 48,
+   "start": 18.75,
+   "dur": 0.9375,
+   "role": "lh",
+   "velocity": 78
+  },
+  {
+   "pitch": 52,
+   "start": 18.75,
+   "dur": 1.25,
+   "role": "lh",
+   "velocity": 63
+  }
+ ]
+}

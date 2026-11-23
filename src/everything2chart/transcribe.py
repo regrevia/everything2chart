@@ -229,6 +229,51 @@ def _fix_midi_octaves(midi: np.ndarray, window: int = 16) -> np.ndarray:
     return out
 
 
+def _cut_at_onsets(pitch: int, start: float, end: float,
+                   onset_env: np.ndarray, times: np.ndarray,
+                   stem: str, min_dur: float,
+                   rel: float = 0.55) -> list["NoteEvent"]:
+    """Split one held pitch at re-strike onsets.
+
+    A pitch tracker merges repeats of the same key into a single long note; the
+    onset envelope does not.  Cut where the envelope jumps by `rel` of a run's
+    own dynamic range, and only keep cuts at least `min_dur` apart so a noisy
+    envelope cannot shred the line.
+    """
+    import numpy as np
+
+    span = float(end - start)
+    if span < min_dur * 2 or len(onset_env) == 0:
+        return [NoteEvent(pitch=pitch, start=start, dur=span, velocity=80,
+                          stem=stem, confidence=float(min(1.0, span / 0.4)))]
+    i0 = int(np.searchsorted(times, start))
+    i1 = int(np.searchsorted(times, end))
+    if i1 - i0 < 2:
+        return [NoteEvent(pitch=pitch, start=start, dur=span, velocity=80,
+                          stem=stem, confidence=float(min(1.0, span / 0.4)))]
+    seg = onset_env[i0:i1].astype(float)
+    floor, peak = float(np.percentile(seg, 20)), float(seg.max())
+    if peak <= floor + 1e-6:
+        return [NoteEvent(pitch=pitch, start=start, dur=span, velocity=80,
+                          stem=stem, confidence=float(min(1.0, span / 0.4)))]
+    thr = floor + rel * (peak - floor)
+    cuts: list[float] = []
+    for j in range(1, len(seg) - 1):
+        if seg[j] >= thr and seg[j] >= seg[j - 1] and seg[j] > seg[j + 1] * 0.9:
+            t = float(times[i0 + j])
+            if t - start >= min_dur and (not cuts or t - cuts[-1] >= min_dur):
+                cuts.append(t)
+    bounds = [start] + [c for c in cuts if end - c >= min_dur] + [end]
+    out: list[NoteEvent] = []
+    for a, b in zip(bounds, bounds[1:]):
+        if b - a < min_dur:
+            continue
+        out.append(NoteEvent(pitch=pitch, start=float(a), dur=float(b - a),
+                             velocity=80, stem=stem,
+                             confidence=float(min(1.0, (b - a) / 0.4))))
+    return out
+
+
 def cqt_melody(y, sr, fmin_hz=130.81, fmax_hz=2093.0, stem="other",
                hop=512, bins_per_octave=36, min_dur=0.09,
                continuity=1.0, gamma=20.0):
@@ -338,6 +383,15 @@ def cqt_melody(y, sr, fmin_hz=130.81, fmax_hz=2093.0, stem="other",
             if win.size:
                 sm[i] = np.median(win)
         chosen = np.round(sm)
+    # A held pitch line carries no information about re-strikes: the tracker sees
+    # one long note where the player hit the same key three times.  Onsets do see
+    # them, so split a run wherever the onset envelope peaks well above the level
+    # that pitch run started at.  Without this a repeated melody note collapses --
+    # measurably, 40 of 54 notes in the reference clip.
+    onset_strength = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
+    if len(onset_strength) >= n_frames:
+        onset_strength = onset_strength[:n_frames]
+
     notes = []
     cur_p, cur_s = None, None
     for t in range(n_frames + 1):
@@ -352,9 +406,8 @@ def cqt_melody(y, sr, fmin_hz=130.81, fmax_hz=2093.0, stem="other",
             t_end = times[t] if t < n_frames else times[-1] + hop / sr
             dur = t_end - cur_s
             if dur >= min_dur:
-                notes.append(NoteEvent(pitch=cur_p, start=float(cur_s), dur=float(dur),
-                                       velocity=80, stem=stem,
-                                       confidence=float(min(1.0, dur / 0.4))))
+                notes.extend(_cut_at_onsets(cur_p, float(cur_s), t_end, onset_strength,
+                                            times, stem, min_dur))
             cur_p = p
             cur_s = times[t] if p is not None else None
     return notes

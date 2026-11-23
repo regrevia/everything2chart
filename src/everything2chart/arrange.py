@@ -255,25 +255,32 @@ def _one_length_per_strike(notes: list[NoteEvent], spq: float) -> list[NoteEvent
     return out
 
 
-def _collapse_beat_onsets(notes: list[NoteEvent], spq: float) -> list[NoteEvent]:
-    """One strike per beat per hand, at the beat's first onset.
+def _collapse_beat_onsets(notes: list[NoteEvent], spq: float,
+                          sub: int = 4) -> list[NoteEvent]:
+    """One strike per written slot per hand, at the slot's first onset.
 
-    简谱 prints one column per beat for each hand, and every column shares a
-    single duration, so a second onset inside the same beat would have to borrow
-    the first one's length.  Pulling the different pitches of a beat onto that
-    beat's earliest onset keeps one column and turns them into the chord the hand
-    would take together.  A repeated pitch is left alone: that is a re-struck
-    melody note, not a chord tone, and dropping it would erase part of the tune.
+    简谱 prints one column per slot -- ``sub`` per beat, sixteenths at the
+    default 4 -- and every column shares a single duration, so a second onset
+    inside the same slot would have to borrow the first one's length.  Pulling
+    the different pitches of a slot onto that slot's earliest onset keeps one
+    column and turns them into the chord the hand would take together.  A
+    repeated pitch is left alone: that is a re-struck melody note, not a chord
+    tone, and dropping it would erase part of the tune.
+
+    The slot, not the beat, is the window: a beat-wide collapse also welds
+    eighths onto each other and turns a walking eighth-note line into quarter
+    notes, which is a rhythm the page can print but the recording never played.
     """
+    step = spq / max(1, sub)
     first: dict[int, float] = {}
     for n in notes:
-        b = int(n.start / spq + 1e-6)
+        b = int(n.start / step + 1e-6)
         if b not in first or n.start < first[b]:
             first[b] = n.start
     seen: set[tuple[int, int]] = set()
     out = []
     for n in notes:
-        b = int(n.start / spq + 1e-6)
+        b = int(n.start / step + 1e-6)
         key = (b, n.pitch)
         t = first[b]
         if key in seen or abs(t - n.start) < 1e-9:
@@ -309,19 +316,22 @@ def _end_before_strike_beat(notes: list[NoteEvent], spq: float) -> list[NoteEven
     return sorted(out, key=lambda n: (n.start, n.pitch))
 
 
-def _dedupe_beats(notes: list[NoteEvent], spq: float) -> list[NoteEvent]:
-    """One key, one note per written beat.
+def _dedupe_beats(notes: list[NoteEvent], spq: float,
+                  sub: int = 4) -> list[NoteEvent]:
+    """One key, one note per written slot.
 
-    Two notes of the same pitch whose onsets fall in the same beat cannot both
-    be printed: the page writes a pitch once per beat, so the reader takes them
-    for one note and the round trip loses a length.  An eighth-note repeat of
-    one key inside a beat is the one case the text cannot say, so keep the
-    longest reading and let the repeat go.
+    The page writes a pitch once per slot, so two notes of the same pitch in
+    the same slot cannot both be printed: the reader takes them for one note
+    and the round trip loses a length.  The slot is the finest value either
+    notation can engrave (``sub`` per beat, sixteenths at the default 4), not
+    the whole beat -- a beat-wide window also swallows the eighth-note repeat
+    of one key, and on a melody of repeated notes that is the rhythm itself.
     """
+    step = spq / max(1, sub)
     best: dict[tuple[int, int], NoteEvent] = {}
     order: list[tuple[int, int]] = []
     for n in notes:
-        key = (int(n.start / spq + 1e-6), n.pitch)
+        key = (int(n.start / step + 1e-6), n.pitch)
         cur = best.get(key)
         if cur is None:
             best[key] = n
