@@ -1,6 +1,6 @@
 """End-to-end CLI: audio file -> two-hand piano score (MusicXML/MIDI/jianpu).
 
-    python -m pianochart.cli --input work/astr2.m4a --preset easy --out out
+    python -m everything2chart.cli --input work/astr2.m4a --preset easy --out out
 
 Stems are cached to .npz so separation runs exactly once per track.
 """
@@ -18,7 +18,7 @@ import numpy as np
 from . import arrange, audio, eval as peval, notation, transcribe
 from . import fingering
 
-log = logging.getLogger("pianochart")
+log = logging.getLogger("everything2chart")
 
 
 def _cache_path(cache_dir: Path, src: Path, model: str, seconds: float | None) -> Path:
@@ -83,7 +83,7 @@ def _report_value(value, out_dir: Path):
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="pianochart")
+    p = argparse.ArgumentParser(prog="everything2chart")
     p.add_argument("--input", required=True)
     p.add_argument("--out", default="out")
     p.add_argument("--preset", default="easy", choices=["easy", "medium", "hard", "all"])

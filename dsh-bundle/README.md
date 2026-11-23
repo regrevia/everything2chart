@@ -1,12 +1,14 @@
-# pianochart-dsh
+# dsh-pianochart
+
+The DeepSeek Harness plugin for [everything2chart](https://github.com/regrevia/everything2chart).
 
 One audio link in, one piano score out: five-line staff images, numbered
 (jianpu) notation, MusicXML and MIDI.
 
 This bundle is a **Host plugin** that adds one tool, `piano_score`, and mounts
 an **MCP server** so the same tool is also reachable as
-`mcp__pianochart__piano_score`. It does not reimplement the transcription: it
-resolves the link to a local audio file, runs the documented `pianochart.cli` in
+`mcp__dsh-pianochart__piano_score`. It does not reimplement the transcription: it
+resolves the link to a local audio file, runs the documented `everything2chart.cli` in
 a child process, and reads the `report.json` that CLI writes. Demucs needs
 minutes of CPU and several gigabytes, so it must not run inside the Harness Node
 runtime.
@@ -17,11 +19,11 @@ The bundle patch (`cordis.patch.yml`) inserts two rows:
 
 | Row | Module | What it provides |
 | --- | --- | --- |
-| `pianochart` | `pianochart-dsh` | Host tool `piano_score`, plus the `pianochart` skill |
-| `pianochart-mcp` | `@deepseek-ai/dsh-mcp-client` | stdio MCP server, tools named `mcp__pianochart__piano_score` |
+| `dsh-pianochart` | `dsh-pianochart` | Host tool `piano_score`, plus the `pianochart` skill |
+| `dsh-pianochart-mcp` | `@deepseek-ai/dsh-mcp-client` | stdio MCP server, tools named `mcp__dsh-pianochart__piano_score` |
 
-The MCP row runs `lib/pianochart_mcp.py`, which is a stdio JSON-RPC server over
-the same bridge (`lib/pianochart_bridge.py`) the Host tool uses. Both cost the
+The MCP row runs `lib/mcp_server.py`, which is a stdio JSON-RPC server over
+the same bridge (`lib/bridge.py`) the Host tool uses. Both cost the
 same CPU; pick one. The MCP name is prefixed by the client, so it does not
 collide with the Host tool.
 
@@ -49,7 +51,7 @@ plugin_manager install_bundle <absolute path to this directory>
 Or copy the directory into `~/.dsh/plugins/` and enable it from **Plugins**.
 
 The pipeline itself must already be on this machine — a checkout containing
-`src/pianochart/cli.py` and a Python environment with its dependencies. This
+`src/everything2chart/cli.py` and a Python environment with its dependencies. This
 bundle finds it in this order:
 
 1. `PIANOCHART_REPO`

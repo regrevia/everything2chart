@@ -8,7 +8,7 @@ picture -- so the check has to be mechanical.
 
 Usage::
 
-    python tools/verify_fingering.py out/mcp-015/full1-easy.arr.pkl --mode all
+    python scripts/verify_fingering.py out/mcp-015/full1-easy.arr.pkl --mode all
 
 It prints the same dict the pipeline writes to ``report.json`` as
 ``fingering_check``: how many numbers the arrangement holds, how many reached
@@ -29,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pianochart import fingering  # noqa: E402
+from everything2chart import fingering  # noqa: E402
 
 
 def _staff_path(pkl: Path) -> Path:

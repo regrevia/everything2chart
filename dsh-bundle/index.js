@@ -1,14 +1,14 @@
 /**
- * pianochart-dsh — turn one audio link into a piano score.
+ * dsh-pianochart — turn one audio link into a piano score.
  *
  * The scoring pipeline is a Python program that already documents its own
- * command line (`src/pianochart/cli.py`). This plugin does not reimplement any
+ * command line (`src/everything2chart/cli.py`). This plugin does not reimplement any
  * of it: the tool resolves the link to a local audio file, runs that CLI in a
  * child process, and reads the `report.json` it writes. Keeping the pipeline
  * out of this process matters — Demucs wants a few gigabytes and minutes of
  * CPU, which must not run inside the Harness Node runtime.
  *
- * @module pianochart-dsh
+ * @module dsh-pianochart
  */
 
 import { spawn } from 'node:child_process'
@@ -18,11 +18,11 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-export const name = 'pianochart-dsh'
+export const name = 'dsh-pianochart'
 export const inject = ['tools', 'skills']
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const BRIDGE = join(HERE, 'lib', 'pianochart_bridge.py')
+const BRIDGE = join(HERE, 'lib', 'bridge.py')
 const TOOL_TIMEOUT_MS = 1_800_000
 
 // The skill carries the driving instructions (which tier, preview long audio,
@@ -258,7 +258,7 @@ function format(result) {
 export function apply(ctx, config = {}) {
   ctx.effect(() => {
     registerSkill(ctx).catch((error) => {
-      ctx.logger?.warn?.('pianochart-dsh: skill not registered', error)
+      ctx.logger?.warn?.('dsh-pianochart: skill not registered', error)
     })
   })
   ctx.effect(() => ctx.tools.register({
@@ -336,7 +336,7 @@ export function apply(ctx, config = {}) {
         return {
           ok: false,
           error: 'the pianochart pipeline is not on this machine',
-          hint: 'Set PIANOCHART_REPO to its directory (the one holding src/pianochart/cli.py).',
+          hint: 'Set PIANOCHART_REPO to its directory (the one holding src/everything2chart/cli.py).',
         }
       }
       const python = findPython(repo, config)

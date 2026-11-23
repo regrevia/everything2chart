@@ -1,20 +1,21 @@
 # Two entries: the Host tool (index.js through ctx.tools) and an MCP client
-# pointing at the stdio server in lib/pianochart_mcp.py. They share one
+# pointing at the stdio server in lib/mcp_server.py. They share one
 # pipeline; the tool is the convenient path, the MCP server is what any other
 # MCP client can attach to.
 #
-# No absolute path is baked in. The launcher below finds the pianochart
-# checkout (the directory holding src/pianochart/cli.py) by trying, in order:
-# PIANOCHART_REPO, $HOME/piano-rescue, $HOME/piano, then walking up from the
-# working directory. PIANOCHART_PYTHON / PIANOCHART_MCP override the two
-# files. A checkout anywhere else only needs PIANOCHART_REPO set.
+# No absolute path is baked in. The launcher below finds the everything2chart
+# checkout (the directory holding src/everything2chart/cli.py) by trying, in order:
+# E2C_REPO (or the older PIANOCHART_REPO), $HOME/everything2chart,
+# $HOME/piano-rescue, $HOME/piano, then walking up from the working directory.
+# E2C_PYTHON / E2C_MCP override the two files. A checkout anywhere else only
+# needs E2C_REPO set.
 - insert:
-    - id: pianochart
-      name: pianochart-dsh
-    - id: pianochart-mcp
+    - id: dsh-pianochart
+      name: dsh-pianochart
+    - id: dsh-pianochart-mcp
       name: '@deepseek-ai/dsh-mcp-client'
       config:
-        serverName: pianochart
+        serverName: dsh-pianochart
         transport: stdio
         # A score needs minutes of CPU; the client default of 60 s would cut
         # every real run off mid-pipeline. Match the Host tool's budget.
@@ -23,26 +24,26 @@
         args:
           - -c
           - |
-            PIANOCHART_REPO=${PIANOCHART_REPO:-}
-            PIANOCHART_MCP=${PIANOCHART_MCP:-}
-            PIANOCHART_PYTHON=${PIANOCHART_PYTHON:-}
+            E2C_REPO=${E2C_REPO:-${PIANOCHART_REPO:-}}
+            E2C_MCP=${E2C_MCP:-${PIANOCHART_MCP:-}}
+            E2C_PYTHON=${E2C_PYTHON:-${PIANOCHART_PYTHON:-}}
             repo=
-            for c in "$PIANOCHART_REPO" "$HOME/piano-rescue" "$HOME/piano" "$PWD"; do
+            for c in "$E2C_REPO" "$HOME/everything2chart" "$HOME/piano-rescue" "$HOME/piano" "$PWD"; do
               d=${c:-$PWD}
               while :; do
-                if [ -f "$d/src/pianochart/cli.py" ]; then repo=$d; break 2; fi
+                if [ -f "$d/src/everything2chart/cli.py" ]; then repo=$d; break 2; fi
                 p=$(dirname "$d")
                 [ "$p" = "$d" ] && break
                 d=$p
               done
             done
             if [ -z "$repo" ]; then
-              echo "pianochart: no checkout found; set PIANOCHART_REPO to the directory containing src/pianochart/cli.py" >&2
+              echo "everything2chart: no checkout found; set E2C_REPO to the directory containing src/everything2chart/cli.py" >&2
               exit 1
             fi
-            mcp=$PIANOCHART_MCP
-            [ -n "$mcp" ] || mcp=$repo/dsh-bundle/lib/pianochart_mcp.py
-            py=$PIANOCHART_PYTHON
+            mcp=$E2C_MCP
+            [ -n "$mcp" ] || mcp=$repo/dsh-bundle/lib/mcp_server.py
+            py=$E2C_PYTHON
             [ -n "$py" ] || { [ -x "$repo/.venv/bin/python" ] && py=$repo/.venv/bin/python; }
             [ -n "$py" ] || py=$(command -v python3)
             exec "$py" "$mcp"

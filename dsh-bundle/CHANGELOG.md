@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.0
+
+The project is called `everything2chart` from here on. One audio link in, one
+playable score out, and the piano is where it starts rather than what it is:
+other instruments are next, and the pipeline is portable to any host that can
+speak MCP. The GitHub repository is
+[`regrevia/everything2chart`](https://github.com/regrevia/everything2chart)
+and the Python package is `everything2chart`, so `python -m everything2chart.cli`
+is the documented entry point.
+
+Two names did not move, on purpose:
+
+- The npm package stays `pianochart-dsh`. An npm name is fixed per package, so
+  "renaming" it means publishing a second package and deprecating the first;
+  that is a migration, not a rename, and it is not worth a broken install for
+  anyone on `0.1.x`.
+- This plugin keeps its catalog name `dsh-pianochart`, which is the only place
+  `pianochart` survives: a plugin catalog wants a name that says which product
+  it plugs into, and the skill it registers is still invoked as `pianochart`.
+
+What moves inside the bundle: `lib/pianochart_bridge.py` -> `lib/bridge.py`,
+`lib/pianochart_mcp.py` -> `lib/mcp_server.py`. The env overrides are now
+`E2C_REPO` / `E2C_PYTHON` / `E2C_MCP`, and the old `PIANOCHART_*` spellings are
+still read as a fallback so an existing setup keeps working.
+
+
 ## 0.1.8
 
 - The docs stop claiming the tiers share a register. They share the notes,

@@ -1,8 +1,13 @@
-# pianochart
+# everything2chart
 
-One audio link in, one playable piano score out: five-line staff images,
-numbered (jianpu) notation, MusicXML and MIDI, in three tiers that share one
-arrangement.
+One audio link in, one playable score out: five-line staff images, numbered
+(jianpu) notation, MusicXML and MIDI. It starts with the piano — one
+arrangement in three keys — and the name is the plan: other instruments next,
+and any agent that speaks MCP, not only DSH.
+
+The DSH plugin from this repository is published as **`dsh-pianochart`**, and
+that name is the only place `pianochart` survives: plugin catalogs want a name
+that says which product it plugs into.
 
 ```
 audio -> source separation (Demucs) -> melody and bass (pYIN, chroma)
@@ -17,9 +22,10 @@ audio -> source separation (Demucs) -> melody and bass (pYIN, chroma)
 - A drum kit does not become playable piano. Percussion can only show up as
   rhythmic weight, not as notes.
 - Non-melodic instruments that carry harmony are folded into the left hand.
-- Three tiers share one arrangement: same rhythm, same density, same register.
-  Only the key signature differs, so `easy` has the fewest black keys and is the
-  tier to play. Playback restores the original pitch.
+- Three tiers are one arrangement in three keys: the same notes, rhythm and
+  left-hand voicing, transposed so `easy` has the fewest black keys and `hard`
+  the most. A tier therefore sits a few semitones above or below the others.
+  Playback restores the original pitch.
 
 Both hands are written to be playable: at most three keys under one hand at a
 time, never wider than an octave.
@@ -29,8 +35,8 @@ time, never wider than an octave.
 The pipeline is Python; the DSH plugin is a thin bundle around it. You need both.
 
 ```bash
-git clone https://github.com/regrevia/dsh-pianochart.git
-cd dsh-pianochart
+git clone https://github.com/regrevia/everything2chart.git
+cd everything2chart
 
 # 1. Python environment
 python3 -m venv .venv
@@ -51,7 +57,7 @@ printf "models: ['955717e8']\n" > models/demucs_repo/htdemucs.yaml
 ## Run the pipeline directly
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m pianochart.cli \
+PYTHONPATH=src .venv/bin/python -m everything2chart.cli \
   --input track.m4a --preset all --out out/track
 ```
 
@@ -87,12 +93,12 @@ Install the bundle, then call the host tool `piano_score`:
 - Outputs land in a new directory under `out/`; the absolute paths come back.
 
 There is also a small local service: `PYTHONPATH=src .venv/bin/python -m
-pianochart.serve --port 8797` answers `POST /api/score` with `{"source", "tier",
+everything2chart.serve --port 8797` answers `POST /api/score` with `{"source", "tier",
 "fingering", "seconds"}`, returns a job id, and reports the artifacts when the job
 is done. It exists so a web page can hand a link to a runner on this machine.
 
 The same pipeline is also served over MCP as `piano_score` on stdio, so any MCP
-client can use it. The bundle starts it from `lib/pianochart_mcp.py`; point it at
+client can use it. The bundle starts it from `lib/mcp_server.py`; point it at
 your checkout with `PIANOCHART_REPO` if it is not next to the plugin.
 
 ## Reading the numbers

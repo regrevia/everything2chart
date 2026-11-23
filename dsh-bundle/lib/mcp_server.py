@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Minimal stdio MCP server for pianochart.
+"""Minimal stdio MCP server: one audio link in, one piano score out.
 
 Speaks JSON-RPC 2.0 over stdin/stdout with one tool, `piano_score`, which is a
-thin wrapper around `pianochart_bridge.py`. The bridge does the work (source
+thin wrapper around `bridge.py`. The bridge does the work (source
 resolution, pipeline run, report collection); this file only translates MCP
 frames into a bridge invocation and the bridge's JSON answer back into MCP
 content.
@@ -22,7 +22,7 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BRIDGE = os.path.join(HERE, "pianochart_bridge.py")
+BRIDGE = os.path.join(HERE, "bridge.py")
 PROTOCOL_VERSION = "2024-11-05"
 # The pipeline runs on CPU and the separation stage alone costs about a tenth of
 # the audio length, so a five-minute song needs well over five minutes here.
@@ -97,15 +97,15 @@ TOOL = {
 
 def log(message: str) -> None:
     """Progress goes to stderr; stdout carries JSON-RPC frames only."""
-    print(f"[pianochart-mcp] {message}", file=sys.stderr, flush=True)
+    print(f"[e2c-mcp] {message}", file=sys.stderr, flush=True)
 
 
 def _is_repo(path: str) -> bool:
-    return bool(path) and os.path.isfile(os.path.join(path, "src", "pianochart", "cli.py"))
+    return bool(path) and os.path.isfile(os.path.join(path, "src", "everything2chart", "cli.py"))
 
 
 def find_repo() -> str:
-    """Locate the pianochart checkout.
+    """Locate the everything2chart checkout.
 
     Order: PIANOCHART_REPO, then walk up from this file (the bundle normally
     lives inside the checkout as <repo>/dsh-bundle), then home guesses.
@@ -131,8 +131,8 @@ def find_repo() -> str:
 
     searched = env or "PIANOCHART_REPO unset"
     raise RuntimeError(
-        "pianochart checkout not found; set PIANOCHART_REPO to the directory "
-        f"containing src/pianochart/cli.py (searched from {HERE}, {searched})")
+        "everything2chart checkout not found; set PIANOCHART_REPO to the directory "
+        f"containing src/everything2chart/cli.py (searched from {HERE}, {searched})")
 
 
 def find_python(repo: str) -> str:
@@ -235,7 +235,7 @@ def handle(request: dict):
         return {
             "protocolVersion": PROTOCOL_VERSION,
             "capabilities": {"tools": {}},
-            "serverInfo": {"name": "pianochart", "version": "0.1.0"},
+            "serverInfo": {"name": "everything2chart", "version": "0.2.0"},
         }
     if method == "tools/list":
         return {"tools": [TOOL]}

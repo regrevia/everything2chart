@@ -1,7 +1,7 @@
 {
-  "name": "pianochart-dsh",
-  "version": "0.1.8",
-  "description": "Turn one audio link into a piano score: five-line staff, numbered notation, MusicXML and MIDI, written to be playable.",
+  "name": "dsh-pianochart",
+  "version": "0.2.0",
+  "description": "Turn one audio link into a playable piano score: staff, numbered notation, MusicXML, MIDI. One arrangement in three keys.",
   "type": "module",
   "license": "MIT",
   "main": "./index.js",
@@ -24,13 +24,12 @@
   ],
   "keywords": [
     "dsh",
-    "deepseek-harness",
-    "cordis",
-    "mcp",
+    "dsh-plugin",
     "piano",
     "sheet-music",
-    "music21",
-    "transcription"
+    "musicxml",
+    "jianpu",
+    "mcp"
   ],
   "engines": {
     "node": ">=20",
@@ -47,11 +46,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/regrevia/dsh-pianochart.git"
+    "url": "git+https://github.com/regrevia/everything2chart.git",
+    "directory": "dsh-bundle"
   },
-  "homepage": "https://github.com/regrevia/dsh-pianochart#readme",
+  "homepage": "https://github.com/regrevia/everything2chart/tree/main/dsh-bundle#readme",
   "bugs": {
-    "url": "https://github.com/regrevia/dsh-pianochart/issues"
+    "url": "https://github.com/regrevia/everything2chart/issues"
   },
   "author": {
     "name": "regrevia",

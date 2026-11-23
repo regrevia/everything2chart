@@ -1,6 +1,6 @@
 """Give it a link, get a score.
 
-    python -m pianochart.serve --port 8765
+    python -m everything2chart.serve --port 8765
 
 Opens one page with one box: paste an audio or video link, pick a tier, get the
 staff pages, the numbered notation, MusicXML and MIDI back as download links.
@@ -85,7 +85,7 @@ def _curl(url: str, dest: Path, tries: int = 3) -> Path:
         proc = subprocess.run(
             ["curl", "-L", "--fail", "--silent", "--show-error",
              "-C", "-", "--max-time", str(DOWNLOAD_TIMEOUT),
-             "-A", "Mozilla/5.0 (pianochart)", "-o", str(dest), url],
+             "-A", "Mozilla/5.0 (everything2chart)", "-o", str(dest), url],
             capture_output=True, text=True, timeout=DOWNLOAD_TIMEOUT + 30,
         )
         if proc.returncode == 0 and dest.exists() and dest.stat().st_size > 8192:
@@ -139,7 +139,7 @@ def _run_job(job_id: str, source: str, tier: str, seconds: float | None,
             src = fetch_source(source, work)
             job["status"] = "transcribing"
             out = work / "out"
-            cmd = [sys.executable, "-m", "pianochart.cli",
+            cmd = [sys.executable, "-m", "everything2chart.cli",
                    "--input", str(src), "--out", str(out), "--preset", tier,
                    "--cache-dir", str(work / "cache")]
             if seconds:
@@ -195,7 +195,7 @@ ALLOW_ORIGIN = os.environ.get("PIANOCHART_ALLOW_ORIGIN", "*")
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "pianochart"
+    server_version = "everything2chart"
 
     def log_message(self, fmt, *a):  # keep the terminal readable
         pass
@@ -306,12 +306,12 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
-    p = argparse.ArgumentParser(prog="pianochart.serve")
+    p = argparse.ArgumentParser(prog="everything2chart.serve")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8765)
     args = p.parse_args(argv)
     srv = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"pianochart serve -> http://{args.host}:{args.port}", flush=True)
+    print(f"everything2chart serve -> http://{args.host}:{args.port}", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

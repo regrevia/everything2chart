@@ -2,7 +2,7 @@
 """One link in, one score out.
 
 Resolves a source into a local audio file, runs the documented
-``pianochart.cli`` unchanged, then reports the run as one JSON object on
+``everything2chart.cli`` unchanged, then reports the run as one JSON object on
 stdout. The CLI stays the only entry point into the pipeline so this bridge
 cannot drift from the documented behaviour.
 
@@ -204,7 +204,7 @@ def pipeline_command(repo: str, audio: str, tier: str, out_dir: str,
                      fingering: str | None = None) -> list[str]:
     cmd = [
         os.environ.get("PIANOCHART_PYTHON") or sys.executable,
-        "-m", "pianochart.cli",
+        "-m", "everything2chart.cli",
         "--input", audio,
         "--preset", tier,
         "--out", out_dir,
@@ -259,7 +259,7 @@ def collect(report: dict, tier: str, out_dir: str) -> dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="pianochart bridge")
+    parser = argparse.ArgumentParser(description="everything2chart bridge")
     parser.add_argument("--source", required=True)
     parser.add_argument("--repo", required=True)
     parser.add_argument("--out", required=True)
@@ -272,7 +272,7 @@ def main() -> int:
 
     started = time.time()
     os.makedirs(args.out, exist_ok=True)
-    work_dir = tempfile.mkdtemp(prefix="pianochart-", dir=args.out)
+    work_dir = tempfile.mkdtemp(prefix="e2c-", dir=args.out)
 
     payload: dict = {"ok": False, "tier": args.tier, "out_dir": args.out}
     try:
