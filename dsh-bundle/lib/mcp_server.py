@@ -22,6 +22,19 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _bundle_version():
+    """Read the version from the bundle package.json so it never drifts again."""
+    try:
+        with open(os.path.join(os.path.dirname(HERE), "package.json"), encoding="utf-8") as fh:
+            return json.load(fh).get("version") or "0.0.0"
+    except Exception:
+        return "0.0.0"
+
+
+VERSION = _bundle_version()
+
 BRIDGE = os.path.join(HERE, "bridge.py")
 PROTOCOL_VERSION = "2024-11-05"
 # The pipeline runs on CPU and the separation stage alone costs about a tenth of
@@ -235,7 +248,7 @@ def handle(request: dict):
         return {
             "protocolVersion": PROTOCOL_VERSION,
             "capabilities": {"tools": {}},
-            "serverInfo": {"name": "everything2chart", "version": "0.2.0"},
+            "serverInfo": {"name": "everything2chart", "version": VERSION},
         }
     if method == "tools/list":
         return {"tools": [TOOL]}

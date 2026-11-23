@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1
+## 0.2.2
 
 Fixes the checkout probe in `index.js`, which `0.2.0` shipped still looking for
 `src/pianochart/cli.py`. After the package moved to `src/everything2chart/`,
@@ -9,9 +9,18 @@ that path never exists, so the tool could not find the pipeline and answered
 
 - reads `E2C_REPO` / `E2C_PYTHON` first, with `PIANOCHART_*` kept as a fallback,
   matching what `cordis.patch.yml` and the README already documented;
-- looks in `~/everything2chart` as well as `~/piano-rescue` and `~/piano`.
+- looks in `~/everything2chart` as well as `~/piano-rescue` and `~/piano`;
+- reports its version from `package.json` in the MCP `initialize` handshake, so
+  the handshake can no longer claim a version the package is not.
 
 Anyone on `0.2.0` should move to this one.
+
+
+## 0.2.1
+
+Functionally fine — it carries every fix in `0.2.2` — but the MCP `initialize`
+handshake still hardcoded `0.2.0`, so a client asking who it was talking to got
+the wrong answer. Use `0.2.2`.
 
 
 ## 0.2.0
@@ -49,6 +58,7 @@ still read as a fallback so an existing setup keeps working.
   described for what it is: the working window the arrangement is built in,
   before the final shift.
 
+
 ## 0.1.7
 
 - The three tiers are now the same notes, which is what the docs have been
@@ -65,6 +75,7 @@ still read as a fallback so an existing setup keeps working.
   newest attached `easy` and `medium` to the `hard` score and reported a
   disagreement that was not there.
 
+
 ## 0.1.6
 
 - The result says whether the numbers actually reached the score. `fingering`
@@ -76,6 +87,7 @@ still read as a fallback so an existing setup keeps working.
 - A local file path is accepted as it arrives from a file manager. A leading
   `file://` is stripped before the path is resolved instead of being taken
   as part of the filename.
+
 
 ## 0.1.5
 
@@ -90,6 +102,7 @@ still read as a fallback so an existing setup keeps working.
   arrangement, the number in the staff file, and whether every marked chord is
   monotone in its hand's direction. A run that disagrees says so.
 
+
 ## 0.1.4
 
 - Fingering. The score carries finger numbers, `key` by default: the few notes
@@ -99,11 +112,13 @@ still read as a fallback so an existing setup keeps working.
   hand a link to this machine. It takes the same `fingering` argument.
 - Fingering counts are recorded in `report.json` and returned by the tool.
 
+
 ## 0.1.2
 
 - Peer range for `@deepseek-ai/dsh-mcp-client` covers both prerelease lines
   (`>=0.1.0-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0`), so installing on a 0.1
   harness build no longer resolves to nothing.
+
 
 ## 0.1.1
 
@@ -111,6 +126,7 @@ still read as a fallback so an existing setup keeps working.
   the host owns the client, the bundle must not pin a second copy.
 - Icon redrawn: one note on a faint staff, replacing the previous mark that
   read as a grid at small sizes.
+
 
 ## 0.1.0
 
@@ -123,3 +139,4 @@ First release.
   pipeline.
 - Outputs per tier: MusicXML, MIDI, numbered notation text, page PNGs and a
   piano-roll image.
+
