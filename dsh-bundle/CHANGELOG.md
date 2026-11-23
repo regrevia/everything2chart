@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1
+
+Fixes the checkout probe in `index.js`, which `0.2.0` shipped still looking for
+`src/pianochart/cli.py`. After the package moved to `src/everything2chart/`,
+that path never exists, so the tool could not find the pipeline and answered
+"not on this machine" on a machine where it plainly was. Also:
+
+- reads `E2C_REPO` / `E2C_PYTHON` first, with `PIANOCHART_*` kept as a fallback,
+  matching what `cordis.patch.yml` and the README already documented;
+- looks in `~/everything2chart` as well as `~/piano-rescue` and `~/piano`.
+
+Anyone on `0.2.0` should move to this one.
+
+
 ## 0.2.0
 
 The project is called `everything2chart` from here on. One audio link in, one

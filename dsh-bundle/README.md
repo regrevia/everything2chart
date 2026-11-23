@@ -54,13 +54,13 @@ The pipeline itself must already be on this machine — a checkout containing
 `src/everything2chart/cli.py` and a Python environment with its dependencies. This
 bundle finds it in this order:
 
-1. `PIANOCHART_REPO`
-2. `/Users/apple/Desktop/work/piano`
-3. `~/piano`
+1. `E2C_REPO` (`PIANOCHART_REPO` is still read as a fallback)
+2. the directory the bundle sits in, then each parent
+3. `~/everything2chart`, `~/piano-rescue`, `~/piano`
 
 and the interpreter in this order:
 
-1. `PIANOCHART_PYTHON`
+1. `E2C_PYTHON` (`PIANOCHART_PYTHON` still works)
 2. `<repo>/.venv/bin/python`
 3. `<repo>/.venv/bin/python3`
 

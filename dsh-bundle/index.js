@@ -78,16 +78,16 @@ async function registerSkill(ctx) {
  *  directory work. A globally installed copy (node_modules/<pkg>) has no such
  *  ancestor, so config, the env var, and the usual checkout names follow. */
 function findRepo(config) {
-  const candidates = [config?.repo, process.env.PIANOCHART_REPO]
+  const candidates = [config?.repo, process.env.E2C_REPO, process.env.PIANOCHART_REPO]
   for (let dir = HERE; ; dir = dirname(dir)) {
     candidates.push(dir)
     if (dirname(dir) === dir) break
   }
-  candidates.push(join(homedir(), 'piano-rescue'), join(homedir(), 'piano'))
+  candidates.push(join(homedir(), 'everything2chart'), join(homedir(), 'piano-rescue'), join(homedir(), 'piano'))
   for (const candidate of candidates) {
     if (typeof candidate !== 'string' || candidate.length === 0) continue
     const absolute = resolve(candidate)
-    if (existsSync(join(absolute, 'src', 'pianochart', 'cli.py'))) return absolute
+    if (existsSync(join(absolute, 'src', 'everything2chart', 'cli.py'))) return absolute
   }
   return ''
 }
@@ -95,6 +95,7 @@ function findRepo(config) {
 function findPython(repo, config) {
   const candidates = [
     config?.python,
+    process.env.E2C_PYTHON,
     process.env.PIANOCHART_PYTHON,
     repo && join(repo, '.venv', 'bin', 'python'),
     repo && join(repo, '.venv', 'bin', 'python3'),
@@ -335,8 +336,8 @@ export function apply(ctx, config = {}) {
       if (!repo) {
         return {
           ok: false,
-          error: 'the pianochart pipeline is not on this machine',
-          hint: 'Set PIANOCHART_REPO to its directory (the one holding src/everything2chart/cli.py).',
+          error: 'the everything2chart pipeline is not on this machine',
+          hint: 'Set E2C_REPO to its directory (the one holding src/everything2chart/cli.py).',
         }
       }
       const python = findPython(repo, config)
@@ -344,7 +345,7 @@ export function apply(ctx, config = {}) {
         return {
           ok: false,
           error: `no Python environment in ${repo}`,
-          hint: 'Set PIANOCHART_PYTHON to an interpreter that has the pipeline dependencies.',
+          hint: 'Set E2C_PYTHON to an interpreter that has the pipeline dependencies.',
         }
       }
 
