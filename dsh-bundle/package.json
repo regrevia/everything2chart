@@ -1,5 +1,5 @@
 {
-  "name": "dsh-pianochart",
+  "name": "pianochart-dsh",
   "version": "0.2.0",
   "description": "Turn one audio link into a playable piano score: staff, numbered notation, MusicXML, MIDI. One arrangement in three keys.",
   "type": "module",
