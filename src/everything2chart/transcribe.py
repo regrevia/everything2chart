@@ -396,7 +396,7 @@ def _cut_at_onsets(pitch: int, start: float, end: float,
     return out
 
 
-def cqt_melody(y, sr, fmin_hz=130.81, fmax_hz=2093.0, stem="other",
+def cqt_melody(y, sr, fmin_hz=220.0, fmax_hz=2093.0, stem="other",
                hop=512, bins_per_octave=36, min_dur=0.09,
                continuity=1.0, gamma=20.0):
     """Melody line by CQT harmonic salience + skyline tracking.
@@ -404,6 +404,12 @@ def cqt_melody(y, sr, fmin_hz=130.81, fmax_hz=2093.0, stem="other",
     pYIN on a dense orchestral mix reports voice only ~30% of the time, so the
     line comes out dotted. Here every frame keeps a candidate set and a simple
     continuity prior picks the top line, which yields a singable contour.
+
+    ``fmin_hz`` starts the CQT, so it also decides which octaves may enter the
+    candidate set. Set too low and the accompaniment's own register competes
+    with the melody: the Viterbi's weak octave guard cannot climb out of it. A3
+    measures best on the bench clips (micro note-F1 0.780 vs 0.535 at C3) and,
+    unlike C4, still survives a melody written a fifth or an octave lower.
     """
     import librosa
 

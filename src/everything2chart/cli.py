@@ -138,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
 
         melody_stem = "other" if "other" in stems else list(stems)[0]
         melody = transcribe.cqt_melody(stems[melody_stem], 44100, stem=melody_stem,
-                                       fmin_hz=transcribe.librosa.note_to_hz("C3"),
+                                       fmin_hz=transcribe.librosa.note_to_hz("A3"),
                                        fmax_hz=transcribe.librosa.note_to_hz("C7"))
         bass_notes = []
         if "bass" in stems:
