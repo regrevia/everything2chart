@@ -30,7 +30,11 @@ def get_stems(src: Path, model: str, cache_dir: Path,
               seconds: float | None, device: str | None,
               no_separate: bool) -> dict[str, np.ndarray]:
     cache = _cache_path(cache_dir, src, model, seconds)
-    if cache.exists():
+    # --no-separate means "transcribe the mix": reading a stem cache written by
+    # an earlier demucs run would silently transcribe the separated accompaniment
+    # instead, so the same audio gave a different key depending on which
+    # --seconds value happened to be cached.
+    if cache.exists() and not no_separate:
         log.info("using cached stems %s", cache)
         data = np.load(cache)
         return {k: data[k] for k in data.files}

@@ -1,3 +1,12 @@
+## 未发布
+
+- `--no-separate` no longer reads a stem cache left by an earlier demucs run. The
+  flag means "transcribe the mix", but the cache check came first, so passing it
+  could still transcribe the separated accompaniment: on the same 21.0 s clip,
+  `--seconds 21` (cached) reported the key as `G` while `--seconds 22` (not
+  cached) reported `C`. Both now report `C`. The default path, which does run
+  separation, still reuses the cache.
+
 # Changelog
 
 ## 0.2.3
