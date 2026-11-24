@@ -1,5 +1,28 @@
-## 未发布
+## 0.3.0
 
+Numbered notation could print a beat that was short. A beat holding two notes
+half a beat apart came out as two adjacent sixteenths, so the printed beat
+covered 0.75 of a beat and the bar after it had drifted; a beat with no
+right-hand note printed the left hand alone with no rest in front of it, and a
+beat with no left-hand note dropped the right-hand note entirely. All three are
+now spelled out.
+
+| case | before | after |
+| --- | --- | --- |
+| interior hole in a beat | `3'__ 2'__` (0.75 beat) | `3'__ 0__ 2'__` |
+| right hand silent, left hand plays | `| ([1,,]) |`, the `2'` vanished | `| 0([1,,]) |` |
+| three-four, short final bar | bar summed to 0 | bar sums to the metre |
+
+On the two sample recordings the defect was latent rather than audible: the same
+arrangements rendered through the old and the new spelling drop 0 of 87 and 0 of
+139 notes. Where it does bite it changes 6 short cells per tier on clip1 and none
+on clip2, and the staff output, MIDI and `report.json` stats are byte-identical
+either way.
+
+- `scripts/selftest.py` is now a release gate: 11 pure-stdlib cases over the
+  numbered notation, run with `PYTHONPATH=src python scripts/selftest.py`. The
+  previous spelling fails 5 of them. There is no pytest in this project, so this
+  script is what a release has to pass.
 - The MCP server now honours `E2C_REPO` and `E2C_PYTHON`. The launcher already
   documented those names, but `lib/mcp_server.py` only read the legacy
   `PIANOCHART_*` pair, so the missing-checkout error told you to set a variable
