@@ -1,5 +1,9 @@
 ## 未发布
 
+- The MCP server now honours `E2C_REPO` and `E2C_PYTHON`. The launcher already
+  documented those names, but `lib/mcp_server.py` only read the legacy
+  `PIANOCHART_*` pair, so the missing-checkout error told you to set a variable
+  that the server itself never read. Legacy names still work.
 - `--no-separate` no longer reads a stem cache left by an earlier demucs run. The
   flag means "transcribe the mix", but the cache check came first, so passing it
   could still transcribe the separated accompaniment: on the same 21.0 s clip,

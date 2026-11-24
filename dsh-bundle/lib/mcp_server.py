@@ -120,10 +120,11 @@ def _is_repo(path: str) -> bool:
 def find_repo() -> str:
     """Locate the everything2chart checkout.
 
-    Order: PIANOCHART_REPO, then walk up from this file (the bundle normally
-    lives inside the checkout as <repo>/dsh-bundle), then home guesses.
+    Order: E2C_REPO (PIANOCHART_REPO still accepted), then walk up from this
+    file (the bundle normally lives inside the checkout as <repo>/dsh-bundle),
+    then home guesses.
     """
-    env = os.environ.get("PIANOCHART_REPO")
+    env = os.environ.get("E2C_REPO") or os.environ.get("PIANOCHART_REPO")
     if _is_repo(env):
         return env
 
@@ -142,14 +143,17 @@ def find_repo() -> str:
         if _is_repo(guess):
             return guess
 
-    searched = env or "PIANOCHART_REPO unset"
+    searched = env or "E2C_REPO unset"
     raise RuntimeError(
-        "everything2chart checkout not found; set PIANOCHART_REPO to the directory "
+        "everything2chart checkout not found; set E2C_REPO to the directory "
         f"containing src/everything2chart/cli.py (searched from {HERE}, {searched})")
 
 
 def find_python(repo: str) -> str:
-    """Prefer the repo venv; fall back to whatever interpreter runs this file."""
+    """E2C_PYTHON wins, then the repo venv, then whatever runs this file."""
+    override = os.environ.get("E2C_PYTHON") or os.environ.get("PIANOCHART_PYTHON")
+    if override:
+        return override
     venv = os.path.join(repo, ".venv", "bin", "python")
     if os.path.exists(venv):
         return venv
