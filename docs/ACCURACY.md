@@ -142,6 +142,40 @@ A/B 用**同一批 pickle**（`/tmp/fix31b`、`/tmp/fixc2b`）分别喂旧、新
 
 `beat_track` 还会把拍点排到文件末尾的静音里（`clip1` 最后一拍 RMS 0.0005、中位 0.1116），`_drop_tail_silence` 按本曲 RMS 中位的 5% 只裁尾部连续拍；在 60 秒真实录音上裁 0 个，即门限在真实素材上是惰性的。
 
+### 第四轮：只有右手的一拍会整颗消失（附一条会失败的闸门）
+
+这一类错和前面两轮的共同点是**读谱的人听得出、审计脚本看不见**，所以把它做成了一条会失败的闸门（`scripts/selftest.py`，纯手写谱，不需要音频、分离和缓存）：
+
+```
+PYTHONPATH=src .venv/bin/python scripts/selftest.py     # 11/11 才算过
+```
+
+三个判据一起判，缺一条都不算修好：每只手每小节合计拍号、每只手每个格子合计一拍、**印出来的音高多重集和 pickle 完全相等**（休止不产生音高，所以第三条才是「宽度是修出来的、不是填出来的」的证据）。
+
+最严重的一处是只有右手的一拍。旧代码的格子拼装是
+
+```python
+if not rh and not lh:      cells.append("0")
+elif rh and lh:            cells.append(rh + "(" + lh + ")")
+else:                      cells.append("(" + lh + ")")   # 把 rh 丢了
+```
+
+最后一个 `else` 只考虑了「左手有、右手没有」，但它同时接住了「右手有、左手没有」——于是那一拍印成 `()`，**右手的音整颗消失**。手写谱上 `3/4`、六拍、音在第三拍，旧代码印 `| 1'(1,) | 0 | () |`，新代码印 `| 1'(1,) | 0 | 2' |`。
+
+这一处必须说清楚：**两个 bench 样本上它没有触发**。同一批 pickle 分别喂新旧 `notation.py`，`clip1` 87/87、`clip2` 139/139，丢 0 颗音——因为这两首曲子的左手恰好在右手出声的每一拍都有音，那个 `else` 分支没被走到。所以它是**潜在**缺陷，不是这两个样本上的实测缺陷；只有合成谱能稳定复现。把它写成「bench 上丢了 N 颗音」就是撒谎。
+
+旧代码在闸门下 6/11 通过，挂的五条各对应一处真实错法：
+
+| 用例 | 旧代码的失败信息 |
+| --- | --- |
+| `two_half_beats` | `bar 1 beat 1 right spells 0.75 of a beat: "3'__ 2'__ 0__(1,)"` |
+| `silent_right_hand` | `expected '0(' in the printed notation`（印的是 `(-)`） |
+| `three_four` | `right hand sums to 2, metre is 3`＋`pitch 74 not printed` |
+| `short_final_bar` | `pitch 74 not printed` |
+| `dense_eighth_run` | `bar 2 right hand sums to 0`＋`8 pitches not printed` |
+
+新代码 11/11。三个为了修上面那处而必须一起满足的已有验收（`bar_audit.py` 的 `hand-short: 0`、`jianpu_roundtrip.py` 的 `identical`、延音 `unbacked=0`）在第一节列了数字，这里不重复。
+
 ## 已知短板
 
 - **八度错误**。`cqt_melody` 的谐波累加方向反了：`sal[: n_bins - shift] += w * C[shift:]` 把高 bin 的能量加到低 bin，造成系统性低八度偏置。半音差直方图上 `-12` 出现 5 次。pc-F1 明显高于 note-F1 的一部分原因就在这里。

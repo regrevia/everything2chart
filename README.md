@@ -131,3 +131,24 @@ PYTHONPATH=src python scripts/verify_fingering.py out/<run>/<stem>-<tier>.arr.pk
 ```
 
 It exits non-zero when they disagree, so it can gate a release.
+
+## Checking the bar lines
+
+A bar that holds the wrong number of beats sounds like a mistake but looks
+fine, so it is measured rather than eyeballed. Two checks, doing different
+jobs:
+
+```sh
+# a real run's output: every bar against the metre, per hand
+PYTHONPATH=src python scripts/bar_audit.py out/<run> --bpb 4
+
+# the renderer itself, on hand-written scores, no audio needed
+PYTHONPATH=src python scripts/selftest.py
+```
+
+`bar_audit.py` reports the bars of a run that do not sum to the metre and the
+cells where one hand spells only part of a beat. `selftest.py` is the failing
+version of the same questions: it renders a dozen small scores whose correct
+spelling is known, and exits non-zero on the first one that breaks. It catches
+the spellings that a whole-run audit cannot see, such as a beat the right hand
+sounds alone.
