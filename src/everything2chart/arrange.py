@@ -56,6 +56,16 @@ def collapse_octaves(notes: list[NoteEvent]) -> list[NoteEvent]:
 
 
 OCTAVE_STICKINESS = 12.0   # cost of changing octave between two adjacent notes
+# The window is a preference, not a wall: a note already inside [lo, hi] keeps its
+# written octave unless leaving it wins by more than this. Without the credit the
+# fold drifts down whenever the melody arrives high -- on the fast bench clips it
+# landed a median ninth below the truth (67 vs 79) even though every pitch class
+# was right, because `stickiness` alone makes a low note look as cheap as a high
+# one. Measured on four clips x the melody floor: arranged right-hand note-F1
+# 0.436/0.561/0.421/0.208 -> 0.792/0.749/0.779/0.519, identical to the pitch-class
+# ceiling, and every value from 0.5 to 6 gives the same table, so this is a
+# tie-break rather than a knob.
+OCTAVE_ANCHOR = 1.0
 
 
 def fold_line(pitches: list[int], lo: int, hi: int,
@@ -93,7 +103,8 @@ def fold_line(pitches: list[int], lo: int, hi: int,
             best_k, best_p = min(
                 cands,
                 key=lambda kp: abs(kp[1] - prev)
-                + (stickiness if kp[0] != prev_k else 0.0))
+                + (stickiness if kp[0] != prev_k else 0.0)
+                - (OCTAVE_ANCHOR if kp[0] == 0 else 0.0))
         out.append(int(best_p))
         prev, prev_k = int(best_p), best_k
     return out
