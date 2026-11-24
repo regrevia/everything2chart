@@ -59,6 +59,15 @@ def _side(cell: str) -> float:
     return sum(_token_beats(t) for t in cell.split())
 
 
+def hand_beats(cell: str) -> tuple[float, float]:
+    """Beats written for the right and left hand in one shown beat."""
+    if "(" not in cell:
+        return _side(cell), 0.0
+    rh = cell.split("(")[0]
+    lh = cell[cell.index("(") + 1:cell.rindex(")")] if ")" in cell else ""
+    return _side(rh), _side(lh)
+
+
 def cell_beats(cell: str) -> float:
     """Beats consumed by one shown beat.
 
@@ -67,11 +76,7 @@ def cell_beats(cell: str) -> float:
     same instant, not a longer note.  Adding the two would count every
     accompanied beat twice and report every bar as over-full.
     """
-    if "(" not in cell:
-        return _side(cell)
-    rh = cell.split("(")[0]
-    lh = cell[cell.index("(") + 1:cell.rindex(")")] if ")" in cell else ""
-    return max(_side(rh), _side(lh))
+    return max(hand_beats(cell))
 
 
 def jianpu_bars(path: Path) -> list[float]:
@@ -82,6 +87,32 @@ def jianpu_bars(path: Path) -> list[float]:
         cells = line.strip().strip("|").split("|")
         bars.append(sum(cell_beats(c) for c in cells))
     return bars
+
+
+def jianpu_hand_cells(path: Path) -> list[tuple[int, int, str, float]]:
+    """Cells where one hand is neither a full beat nor silent.
+
+    Reading a cell as ``max(rh, lh)`` answers "how long is this bar", which is
+    the question the bar count asks.  It cannot answer "did the bar lose half a
+    beat inside a cell", because a hand that spells three quarters of its beat
+    is hidden by the other hand spelling all of it.  That is exactly how clip1
+    printed ``3__ 2__`` for two notes half a beat apart: the printed tokens were
+    glued together, the gap vanished, and every bar still summed to its metre.
+    So each hand is measured against a beat on its own, and a hand that is
+    merely resting for the whole cell (0) is not a defect -- two-hand piano
+    notation writes the other hand's content and leaves a rest implicit.
+    """
+    short: list[tuple[int, int, str, float]] = []
+    bar = 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|"):
+            continue
+        bar += 1
+        for i, cell in enumerate(line.strip().strip("|").split("|"), 1):
+            for hand, v in zip(("rh", "lh"), hand_beats(cell)):
+                if 1e-6 < v < 1.0 - 1e-6:
+                    short.append((bar, i, hand, round(v, 4)))
+    return short
 
 
 # ---- staff ----------------------------------------------------------------
@@ -128,15 +159,20 @@ def main() -> int:
             continue
         j = jianpu_bars(jp)
         s = staff_bars(mx)
-        rows.append(report(f"{p.name}/jianpu", j, a.bpb))
+        jr = report(f"{p.name}/jianpu", j, a.bpb)
+        jr["hand_short_cells"] = jianpu_hand_cells(jp)
+        rows.append(jr)
         rows.append(report(f"{p.name}/staff(rh+lh)", s, a.bpb))
     if a.json:
         print(json.dumps(rows, ensure_ascii=False, indent=1))
         return 0
     for r in rows:
+        short = r.get("hand_short_cells", [])
         print(f"{r['arm']:<26} {r['bars']:>3} bars  "
               f"{r['full']:>3} exactly {r['beats_per_bar']:g} beats"
-              f"   off: {r['wrong_bar_beats']}")
+              f"   off: {r['wrong_bar_beats']}"
+              f"   hand-short: {len(short)}"
+              + (f" {short[:4]}" if short else ""))
     return 0
 
 

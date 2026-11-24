@@ -490,8 +490,23 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
         """
         slots = strikes[hand].get(beat)
         if slots:
-            columns = ["[%s]" % "+".join(strikes[hand][beat][k]) if len(strikes[hand][beat][k]) > 1
-                       else strikes[hand][beat][k][0] for k in sorted(strikes[hand][beat])]
+            # Walk the slots in order and spell every hole, not just the one in
+            # front of the first strike.  Two notes half a beat apart were
+            # printed as `3__ 2__` -- adjacent sixteenths -- which reads as a
+            # strike on beat 3.00 and another on 3.25: the gap between them
+            # vanished and the bar came out short by exactly that gap.
+            columns: list[str] = []
+            cursor = 0.0
+            for k in sorted(slots):
+                start = k / float(sub)
+                if start > cursor + 1e-9:
+                    hole = rest_text(start - cursor)
+                    if hole:
+                        columns.append(hole)
+                bucket = slots[k]
+                columns.append("[%s]" % "+".join(bucket) if len(bucket) > 1
+                               else bucket[0])
+                cursor = max(cursor, start + max(_token_beats(t) for t in bucket))
             # The token only carries the fractional part of the length; every
             # "-" adds exactly one beat, so the hold window is the strike's
             # whole-beat count.  Taking the shortest note of the strike keeps a
@@ -500,22 +515,14 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
             # beat, so such a strike needs one dash fewer than its beat count.
             holes = min(max(0, int(np.ceil(end - 1e-9)) - beat - 1)
                         for end in lengths[hand][beat])
-            filled = 0.0
-            for k in sorted(strikes[hand][beat]):
-                # Read the length back off the printed token instead of the
-                # strike list: a token means one whole beat unless it carries
-                # underscores or a dot, and a chord lasts as long as its
-                # longest member because every member is struck together.
-                for tok in strikes[hand][beat][k]:
-                    filled = max(filled, k / float(sub) + _token_beats(tok))
-            # A strike that starts late leaves a hole before it, and a beat
-            # with a hole in front of it reads as a shorter beat.  Spell it out
-            # so the bar still sums to its metre from the first cell.
-            lead = min(sorted(strikes[hand][beat])) / float(sub)
-            if lead > 1e-9:
-                columns.insert(0, rest_text(lead))
-            return (" ".join(columns), beat + holes,
-                    min(1.0, filled))
+            # How much of the beat the printed cells cover.  Read it back off
+            # the tokens rather than the strike list: a token means one whole
+            # beat unless it carries underscores or a dot, and a chord lasts as
+            # long as its longest member because every member is struck
+            # together.  `cursor` already carries both the notes and the holes
+            # just spelled, so the caller pads only the real remainder.
+            filled = min(1.0, cursor)
+            return (" ".join(columns), beat + holes, filled)
         if beat <= hold_until:
             return "-", hold_until, 1.0
         return "", beat - 1, 0.0
@@ -545,12 +552,20 @@ def render_jianpu(arr: Arrangement, beats_per_bar: int | None = None,
                 rh += " " + rest_text(1.0 - fill_r)
             if lh and fill_l < 1.0 - 1e-9:
                 lh += " " + rest_text(1.0 - fill_l)
+            if not rh and lh:
+                # The right hand is silent for this whole beat.  A bare
+                # left-hand cell -- `([1,+5,])` -- prints no right-hand event
+                # at all, so the beat reads as one the right hand skipped
+                # rather than one it rested through, and the printed bar comes
+                # out a beat short.  Spell the rest so the cell is a full beat
+                # in both hands.
+                rh = rest_text(1.0) or "0"
             if not rh and not lh:
                 cells.append("0")
             elif rh and lh:
                 cells.append(rh + "(" + lh + ")")
             else:
-                cells.append("(" + lh + ")")
+                cells.append(rh or "(" + lh + ")")
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
 
